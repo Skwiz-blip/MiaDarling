@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mia Darling — Témoignage</title>
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="apple-touch-icon" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .post-page {
+      padding: 108px 72px 120px;
+      max-width: 1380px;
+      margin: 0 auto;
+    }
+
+    /* Back link */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, .5);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-bottom: 32px;
+      transition: color .2s;
+    }
+
+    .back-link:hover {
+      color: var(--purple-light);
+    }
+
+    .back-link svg {
+      width: 16px;
+    }
+
+    /* ── MAIN POST CARD ───────────────────────────────── */
+    .post-card {
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-card);
+      padding: 48px 52px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .3s;
+    }
+
+    .post-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--purple-mid), transparent);
+    }
+
+    .post-card:hover {
+      border-color: rgba(166, 108, 255, .5);
+    }
+
+    /* Post header */
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .post-header .avatar {
+      width: 68px;
+      height: 68px;
+      font-size: 22px;
+    }
+
+    .post-header-info {
+      flex: 1;
+    }
+
+    .post-author {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+
+    .post-time {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--purple-mid);
+    }
+
+    .post-actions-top {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .share-btn {
+      background: none;
+      border: none;
+      cursor: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, .7);
+      transition: color .2s;
+      font-family: var(--font);
+    }
+
+    .share-btn:hover {
+      color: var(--purple-light);
+    }
+
+    .share-btn svg {
+      width: 18px;
+    }
+
+    /* Post body */
+    .post-body {
+      font-size: 26px;
+      font-weight: 400;
+      line-height: 1.65;
+      color: var(--white);
+      margin-bottom: 36px;
+      letter-spacing: -.2px;
+    }
+
+    /* Tags */
+    .post-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    /* Reactions bar */
+    .reactions-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    .reaction-btn {
+      background: var(--glass-card);
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      cursor: none;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--white);
+      transition: background .2s, border-color .2s, transform .15s;
+    }
+
+    .reaction-btn:hover {
+      background: rgba(255, 255, 255, .12);
+      border-color: rgba(166, 108, 255, .4);
+      transform: scale(1.05);
+    }
+
+    .reaction-btn.active {
+      background: rgba(166, 108, 255, .15);
+      border-color: var(--purple-light);
+    }
+
+    .reaction-emoji {
+      font-size: 20px;
+    }
+
+    .reaction-count {
+      font-size: 13px;
+    }
+
+    .reactions-spacer {
+      flex: 1;
+    }
+
+    .views-count {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .views-count svg {
+      width: 14px;
+    }
+
+    /* ── COMMENTS SECTION ──────────────────────────── */
+    .comments-section {
+      margin-top: 16px;
+    }
+
+    .comments-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    .comments-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--white);
+    }
+
+    .comments-count {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .4);
+      background: var(--glass);
+      padding: 4px 14px;
+      border-radius: 50px;
+    }
+
+    /* Comment thread */
+    .comment-thread {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .comment-item {
+      display: flex;
+      gap: 16px;
+      animation: fadeSlideIn .4s ease both;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .comment-avatar {
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+
+    .comment-bubble {
+      flex: 1;
+      background: var(--glass);
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: 24px;
+      padding: 20px 24px;
+      transition: border-color .2s;
+    }
+
+    .comment-bubble:hover {
+      border-color: rgba(166, 108, 255, .2);
+    }
+
+    /* Own comment (aligned right) */
+    .comment-item.own {
+      flex-direction: row-reverse;
+    }
+
+    .comment-item.own .comment-bubble {
+      border-color: rgba(106, 63, 191, .25);
+    }
+
+    .comment-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--purple-light);
+      margin-bottom: 8px;
+    }
+
+    .comment-name.self-name {
+      color: var(--purple-soft);
+    }
+
+    .comment-text {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, .9);
+      margin-bottom: 14px;
+    }
+
+    .comment-footer {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .comment-action {
+      background: none;
+      border: none;
+      cursor: none;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .5);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: color .2s;
+    }
+
+    .comment-action:hover {
+      color: var(--purple-light);
+    }
+
+    .comment-action svg {
+      width: 14px;
+    }
+
+    .comment-time {
+      margin-left: auto;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .3);
+    }
+
+    /* Nested reply indentation */
+    .comment-reply {
+      margin-left: 72px;
+      position: relative;
+    }
+
+    .comment-reply::before {
+      content: '';
+      position: absolute;
+      left: -28px;
+      top: 0;
+      bottom: 0;
+      width: 1.5px;
+      background: linear-gradient(to bottom, var(--purple-mid), transparent);
+      border-radius: 2px;
+    }
+
+    /* ── REPLY INPUT INLINE ─────────────────────────── */
+    .reply-input-box {
+      margin-top: 12px;
+      display: none;
+      animation: fadeSlideIn .3s ease both;
+    }
+
+    .reply-input-box.open {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .reply-input-box input {
+      flex: 1;
+      background: rgba(255, 255, 255, .05);
+      border: 1.5px solid rgba(166, 108, 255, .3);
+      border-radius: 50px;
+      padding: 10px 20px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--white);
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .reply-input-box input::placeholder {
+      color: rgba(255, 255, 255, .3);
+    }
+
+    .reply-input-box input:focus {
+      border-color: var(--purple-light);
+    }
+
+    .reply-send-btn {
+      background: var(--purple-mid);
+      color: var(--white);
+      border: none;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: none;
+      flex-shrink: 0;
+      transition: background .2s, transform .15s;
+    }
+
+    .reply-send-btn:hover {
+      background: var(--purple-light);
+      transform: scale(1.08);
+    }
+
+    .reply-send-btn svg {
+      width: 16px;
+    }
+
+    /* ── BOTTOM COMMENT INPUT ──────────────────────── */
+    .comment-input-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px 72px;
+      background: rgba(0, 0, 0, .85);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(166, 108, 255, .15);
+      z-index: 50;
+    }
+
+    .comment-input-inner {
+      max-width: 1260px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .comment-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .comment-input-wrap input {
+      width: 100%;
+      background: #000;
+      border: 1.5px solid var(--purple-light);
+      border-radius: var(--radius-pill);
+      padding: 16px 60px 16px 28px;
+      font-family: var(--font);
+      font-size: 16px;
+      color: var(--white);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .comment-input-wrap input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .comment-input-wrap input:focus {
+      border-color: var(--purple-light);
+      box-shadow: 0 0 20px rgba(166, 108, 255, .2);
+    }
+
+    .send-circle {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--purple-light);
+      border: none;
+      cursor: none;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 0 20px rgba(166, 108, 255, .35);
+    }
+
+    .send-circle:hover {
+      background: var(--purple-soft);
+      transform: scale(1.08);
+      box-shadow: 0 0 36px rgba(166, 108, 255, .55);
+    }
+
+    .send-circle svg {
+      width: 20px;
+      color: var(--purple-dark);
+    }
+
+    /* share toast */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--purple-dark);
+      border: 1px solid var(--glass-border);
+      border-radius: 50px;
+      padding: 12px 28px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--white);
+      opacity: 0;
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 960px) {
+      .post-page {
+        padding: 108px 20px 100px;
+      }
+
+      .post-body {
+        font-size: 20px;
+      }
+
+      .comment-input-bar {
+        padding: 12px 16px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .post-page {
+        padding: 88px 16px 90px;
+      }
+
+      .post-card {
+        padding: 24px 20px;
+        border-radius: 24px;
+      }
+
+      .post-body {
+        font-size: 18px;
+        line-height: 1.6;
+      }
+
+      .post-header {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .avatar {
+        width: 56px !important;
+        height: 56px !important;
+      }
+
+      .post-author {
+        font-size: 16px;
+      }
+
+      .post-tags {
+        flex-wrap: wrap;
+      }
+
+      .tag-pill {
+        font-size: 13px;
+        padding: 6px 14px;
+      }
+
+      .reactions-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .reaction-btn {
+        padding: 8px 14px;
+        font-size: 14px;
+      }
+
+      .comment-bubble {
+        padding: 14px 16px;
+      }
+
+      .comment-text {
+        font-size: 14px;
+      }
+
+      .comment-input-bar {
+        padding: 10px 12px;
+      }
+
+      .back-link {
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      .cursor,
+      .cursor-ring {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .post-page {
+        padding: 72px 12px 80px;
+      }
+
+      .post-card {
+        padding: 20px 16px;
+        border-radius: 20px;
+      }
+
+      .post-body {
+        font-size: 16px;
+      }
+
+      .avatar {
+        width: 48px !important;
+        height: 48px !important;
+      }
+
+      .post-author {
+        font-size: 15px;
+      }
+
+      .reaction-btn {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+
+      .reaction-emoji {
+        font-size: 16px;
+      }
+
+      .views-count {
+        font-size: 13px;
+      }
+
+      .comments-title {
+        font-size: 18px;
+      }
+
+      .comment-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 12px !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="toast" id="toast">✓ Lien copié dans le presse-papiers</div>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img src="assets/logo.png" alt="Mia Darling">
+      <span class="nav-logo-text">
+        <span class="logo-m">Mia</span>
+        <span class="logo-d">Darling</span>
+      </span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Accueil</a></li>
+      <li><a href="index.html#recents" class="active">Explorer</a></li>
+      <li><a href="mes-publications.html">Mes publications</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="publier.html" class="btn-primary">Exprimer vous</a>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="post-page page">
+
+    <!-- Back -->
+    <a href="index.html" class="back-link reveal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 12H5M12 5l-7 7 7 7" />
+      </svg>
+      Retour à l'explorer
+    </a>
+
+    <!-- ─ MAIN POST CARD ─────────────────────────── -->
+    <div class="post-card reveal d1">
+      <div class="post-header">
+        <div class="avatar avatar-gray" style="width:68px;height:68px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.5" width="32">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+          </svg>
+        </div>
+        <div class="post-header-info">
+          <div class="post-author">Chargement...</div>
+          <div class="post-time">--</div>
+        </div>
+        <div class="post-actions-top">
+          <button class="share-btn" id="shareBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" />
+            </svg>
+            Partager
+          </button>
+        </div>
+      </div>
+
+      <div class="post-body">Chargement du témoignage...</div>
+
+      <div class="post-tags">
+        <!-- Tags chargés dynamiquement -->
+      </div>
+
+      <div class="reactions-bar">
+        <button class="reaction-btn" data-type="cry" data-reaction-id="1">
+          <span class="reaction-emoji">😭</span>
+          <span class="reaction-count">0</span>
+        </button>
+        <button class="reaction-btn" data-type="sad" data-reaction-id="2">
+          <span class="reaction-emoji">😪</span>
+          <span class="reaction-count">0</span>
+        </button>
+        <button class="reaction-btn" data-type="heart" data-reaction-id="3">
+          <span class="reaction-emoji">🤍</span>
+          <span class="reaction-count">0</span>
+        </button>
+        <div class="reactions-spacer"></div>
+        <div class="views-count">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          <span id="viewsCount">0</span> vues
+        </div>
+      </div>
+    </div>
+
+    <!-- ─ COMMENTS ───────────────────────────────── -->
+    <div class="comments-section reveal d2">
+      <div class="comments-header">
+        <span class="comments-title">Commentaires</span>
+        <span class="comments-count" id="commentCount">0 commentaire</span>
+      </div>
+
+      <div class="comment-thread" id="commentThread">
+        <!-- Commentaires chargés dynamiquement depuis Supabase -->
+      </div><!-- /comment-thread -->
+    </div>
+
+  </div><!-- /post-page -->
+
+  <!-- ─ FIXED COMMENT INPUT ──────────────────────── -->
+  <div class="comment-input-bar">
+    <div class="comment-input-inner">
+      <div class="comment-input-wrap">
+        <input type="text" id="commentInput" placeholder="Ajouter un commentaire…" />
+      </div>
+      <button class="send-circle" id="sendCommentBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Configuration Supabase -->
+  <script src="js/supabase-config.js"></script>
+
+  <script>
+    /* ── CURSOR ─────────────────────────────────────── */
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function tick() { cursor.style.cssText += `left:${mx}px;top:${my}px;`; rx += (mx - rx) * .12; ry += (my - ry) * .12; ring.style.cssText += `left:${rx}px;top:${ry}px;`; requestAnimationFrame(tick); })();
+
+    /* ── REVEAL ─────────────────────────────────────── */
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }), { threshold: .1 });
+    document.querySelectorAll('.reveal').forEach(el => { io.observe(el); setTimeout(() => el.classList.add('visible'), 300); });
+
+    /* ── LOAD POST FROM SUPABASE ─────────────────────── */
+    let currentPostId = null;
+    let currentPost = null;
+    let userReactions = [];
+
+    async function loadPost() {
+      // Récupérer l'ID du post depuis l'URL
+      const urlParams = new URLSearchParams(window.location.search);
+      currentPostId = urlParams.get('id');
+
+      if (!currentPostId) {
+        // Afficher un message d'erreur au lieu de rediriger
+        document.querySelector('.post-body').textContent = 'Aucun témoignage spécifié. Retournez à l\'accueil pour explorer.';
+        document.querySelector('.post-tags').innerHTML = '';
+        console.warn('Pas d\'ID dans l\'URL');
+        return;
+      }
+
+      try {
+        // Charger le post
+        currentPost = await MiaDarling.PostsAPI.getById(currentPostId);
+
+        if (!currentPost) {
+          // Afficher un message au lieu de rediriger
+          document.querySelector('.post-body').textContent = 'Ce témoignage n\'existe pas ou a été supprimé.';
+          document.querySelector('.post-author').textContent = 'Inconnu';
+          document.querySelector('.post-tags').innerHTML = '';
+          console.warn('Post non trouvé:', currentPostId);
+          return;
+        }
+
+        // Enregistrer la vue
+        await MiaDarling.PostsAPI.recordView(currentPostId);
+
+        // Mettre à jour l'interface
+        document.querySelector('.post-author').textContent = currentPost.authorName;
+        document.querySelector('.post-time').textContent = currentPost.timeAgo;
+        document.querySelector('.post-body').textContent = currentPost.content;
+        document.getElementById('viewsCount').textContent = currentPost.viewsCount.toLocaleString('fr-FR');
+
+        // Mettre à jour les tags
+        const tagsContainer = document.querySelector('.post-tags');
+        tagsContainer.innerHTML = currentPost.tags.map(t =>
+          `<span class="tag-pill">#${t.name}</span>`
+        ).join('');
+
+        // Charger les réactions
+        await loadReactions();
+
+        // Charger les commentaires
+        await loadComments();
+
+      } catch (error) {
+        console.error('Erreur chargement post:', error);
+      }
+    }
+
+    /* ── REACTIONS ──────────────────────────────────── */
+    async function loadReactions() {
+      const reactions = await MiaDarling.ReactionsAPI.getForPost(currentPostId);
+      userReactions = await MiaDarling.ReactionsAPI.getUserReactions(currentPostId);
+
+      const reactionBtns = document.querySelectorAll('.reaction-btn');
+
+      reactions.forEach(r => {
+        const btn = document.querySelector(`.reaction-btn[data-type="${r.name}"]`);
+        if (btn) {
+          btn.querySelector('.reaction-count').textContent = r.count.toLocaleString('fr-FR');
+          if (userReactions.includes(r.typeId)) {
+            btn.classList.add('active');
+          }
+        }
+      });
+    }
+
+    document.querySelectorAll('.reaction-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const reactionType = btn.dataset.type;
+        const reactionId = btn.dataset.reactionId ? parseInt(btn.dataset.reactionId) : 3;
+
+        const result = await MiaDarling.ReactionsAPI.toggle(currentPostId, reactionId);
+
+        if (result.success) {
+          const wasActive = btn.classList.contains('active');
+          document.querySelectorAll('.reaction-btn').forEach(b => b.classList.remove('active'));
+
+          if (!wasActive) {
+            btn.classList.add('active');
+            const countEl = btn.querySelector('.reaction-count');
+            const currentCount = parseInt(countEl.textContent.replace(/\s/g, ''));
+            countEl.textContent = (currentCount + 1).toLocaleString('fr-FR');
+          } else {
+            const countEl = btn.querySelector('.reaction-count');
+            const currentCount = parseInt(countEl.textContent.replace(/\s/g, ''));
+            countEl.textContent = Math.max(0, currentCount - 1).toLocaleString('fr-FR');
+          }
+        }
+      });
+    });
+
+    /* ── COMMENTS ───────────────────────────────────── */
+    async function loadComments() {
+      const comments = await MiaDarling.CommentsAPI.getForPost(currentPostId);
+      const thread = document.getElementById('commentThread');
+      thread.innerHTML = '';
+
+      const countEl = document.getElementById('commentCount');
+      countEl.textContent = comments.length + ' commentaire' + (comments.length > 1 ? 's' : '');
+
+      comments.forEach(comment => {
+        appendCommentToThread(comment);
+      });
+    }
+
+    function appendCommentToThread(comment) {
+      const thread = document.getElementById('commentThread');
+      const div = document.createElement('div');
+      div.className = 'comment-item' + (comment.isOwn ? ' own' : '');
+      div.dataset.commentId = comment.id;
+
+      const avatarText = comment.isOwn ? 'MOI' : comment.authorName.substring(0, 2).toUpperCase();
+      const avatarClass = comment.isOwn ? 'avatar-purple' : 'avatar-dark';
+
+      div.innerHTML = comment.isOwn ? `
+        <div class="avatar ${avatarClass} comment-avatar" style="font-size:13px;">${avatarText}</div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:flex-end;">
+          <div class="comment-bubble" style="max-width:820px;">
+            <div class="comment-name self-name">${comment.authorName}</div>
+            <div class="comment-text">${comment.content}</div>
+            <div class="comment-footer">
+              <button class="comment-action" onclick="likeComment(this, ${comment.id})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                <span>${comment.likesCount}</span>
+              </button>
+              <span class="comment-time">${comment.timeAgo}</span>
+            </div>
+          </div>
+        </div>` : `
+        <div class="avatar ${avatarClass} comment-avatar" style="font-size:14px;">${avatarText}</div>
+        <div style="flex:1">
+          <div class="comment-bubble">
+            <div class="comment-name">${comment.authorName}</div>
+            <div class="comment-text">${comment.content}</div>
+            <div class="comment-footer">
+              <span class="comment-action" onclick="toggleReply(${comment.id})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                Répondre
+              </span>
+              <button class="comment-action" onclick="likeComment(this, ${comment.id})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                <span>${comment.likesCount}</span>
+              </button>
+              <span class="comment-time">${comment.timeAgo}</span>
+            </div>
+          </div>
+          <div class="reply-input-box" id="reply-${comment.id}">
+            <input type="text" placeholder="Répondre à ${comment.authorName}…"/>
+            <button class="reply-send-btn" onclick="sendReply(${comment.id})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+            </button>
+          </div>
+        </div>`;
+      thread.appendChild(div);
+    }
+
+    /* ── LIKE COMMENT ───────────────────────────────── */
+    async function likeComment(btn, commentId) {
+      const result = await MiaDarling.CommentsAPI.toggleLike(commentId);
+
+      const n = btn.querySelector('span');
+      const val = parseInt(n.textContent);
+
+      if (result.action === 'liked') {
+        n.textContent = val + 1;
+        btn.style.color = '#ff6b9d';
+      } else {
+        n.textContent = Math.max(0, val - 1);
+        btn.style.color = '';
+      }
+    }
+
+    /* ── REPLY TOGGLE ───────────────────────────────── */
+    function toggleReply(commentId) {
+      const box = document.getElementById(`reply-${commentId}`);
+      if (box) {
+        box.classList.toggle('open');
+        if (box.classList.contains('open')) box.querySelector('input').focus();
+      }
+    }
+
+    async function sendReply(commentId) {
+      const box = document.getElementById(`reply-${commentId}`);
+      const input = box.querySelector('input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      // Créer le commentaire (réponse)
+      const comment = await MiaDarling.CommentsAPI.create(currentPostId, text, commentId);
+
+      if (comment) {
+        appendCommentToThread(comment);
+        input.value = '';
+        box.classList.remove('open');
+
+        // Mettre à jour le compteur
+        const countEl = document.getElementById('commentCount');
+        const c = parseInt(countEl.textContent);
+        countEl.textContent = (c + 1) + ' commentaire' + (c + 1 > 1 ? 's' : '');
+      }
+    }
+
+    /* ── ADD COMMENT ────────────────────────────────── */
+    const commentInput = document.getElementById('commentInput');
+    const sendBtn = document.getElementById('sendCommentBtn');
+
+    sendBtn.addEventListener('click', async () => {
+      const text = commentInput.value.trim();
+      if (!text) return;
+
+      const comment = await MiaDarling.CommentsAPI.create(currentPostId, text);
+
+      if (comment) {
+        appendCommentToThread(comment);
+        commentInput.value = '';
+
+        // Mettre à jour le compteur
+        const countEl = document.getElementById('commentCount');
+        const c = parseInt(countEl.textContent);
+        countEl.textContent = (c + 1) + ' commentaire' + (c + 1 > 1 ? 's' : '');
+      }
+    });
+
+    commentInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
+
+    /* ── SHARE ──────────────────────────────────────── */
+    document.getElementById('shareBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(window.location.href).catch(() => { });
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2800);
+    });
+
+    /* ── INIT ───────────────────────────────────────── */
+    loadPost();
+  </script>
+</body>
+
+</html>

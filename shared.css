@@ -1,0 +1,445 @@
+/* ═══════════════════════════════════════════════════
+   MIA DARLING — Shared Design System
+   ═══════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #000000;
+  --purple-dark: #25015B;
+  --purple-mid: #6A3FBF;
+  --purple-light: #A66CFF;
+  --purple-soft: #C29AFF;
+  --glass: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(166, 108, 255, 0.35);
+  --glass-card: rgba(65, 65, 65, 0.22);
+  --white: #FFFFFF;
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --radius-card: 30px;
+  --radius-pill: 61px;
+  --font: 'Manrope', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font);
+  overflow-x: hidden;
+  cursor: none;
+  min-height: 100vh;
+}
+
+/* ── NOISE ───────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: .35;
+}
+
+/* ── CURSOR ──────────────────────────────────────── */
+.cursor {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  background: var(--purple-light);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width .2s, height .2s, background .2s;
+}
+
+.cursor-ring {
+  position: fixed;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid rgba(166, 108, 255, .45);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: transform .35s cubic-bezier(.25, .46, .45, .94), width .25s, height .25s;
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 72px;
+  z-index: 100;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  background: rgba(0, 0, 0, .65);
+  border-bottom: 1px solid rgba(255, 255, 255, .05);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  transition: transform .2s ease;
+}
+
+.nav-logo:hover {
+  transform: scale(1.02);
+}
+
+.nav-logo img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 20px rgba(166, 108, 255, 0.4);
+}
+
+.nav-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.nav-logo .logo-m {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -.5px;
+}
+
+.nav-logo .logo-d {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--purple-light);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  gap: 40px;
+  list-style: none;
+}
+
+.nav-links a {
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--white);
+  position: relative;
+  transition: color .2s;
+  padding: 8px 0;
+}
+
+.nav-links a.active {
+  color: var(--purple-light);
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple-light), var(--purple-soft));
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
+  border-radius: 2px;
+}
+
+.nav-links a:hover {
+  color: var(--purple-soft);
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+  transform: scaleX(1);
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.btn-primary {
+  background: var(--purple-light);
+  color: var(--purple-dark);
+  border: none;
+  padding: 11px 28px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: none;
+  transition: background .2s, transform .15s, box-shadow .2s;
+  box-shadow: 0 0 24px rgba(166, 108, 255, .35);
+  font-family: var(--font);
+}
+
+.btn-primary:hover {
+  background: var(--purple-soft);
+  transform: translateY(-2px);
+  box-shadow: 0 0 44px rgba(166, 108, 255, .55);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--purple-light);
+  border: 1.5px solid var(--glass-border);
+  padding: 10px 24px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: none;
+  transition: background .2s, border-color .2s;
+  font-family: var(--font);
+}
+
+.btn-ghost:hover {
+  background: rgba(166, 108, 255, .08);
+  border-color: var(--purple-light);
+}
+
+/* ── PAGE WRAPPER ────────────────────────────────── */
+.page {
+  padding-top: 108px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── SCROLLBAR ───────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08000f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--purple-mid);
+  border-radius: 6px;
+}
+
+/* ── UTILS ───────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity .55s ease, transform .55s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.d1 {
+  transition-delay: .1s;
+}
+
+.d2 {
+  transition-delay: .2s;
+}
+
+.d3 {
+  transition-delay: .32s;
+}
+
+.d4 {
+  transition-delay: .44s;
+}
+
+/* ── SHARED TAG PILL ─────────────────────────────── */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(106, 63, 191, .45);
+  border: 1px solid rgba(106, 63, 191, .5);
+  border-radius: 50px;
+  padding: 8px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--white);
+  transition: background .2s, border-color .2s;
+  cursor: none;
+}
+
+.tag-pill:hover {
+  background: rgba(106, 63, 191, .7);
+  border-color: var(--purple-light);
+}
+
+/* ── AVATAR ──────────────────────────────────────── */
+.avatar {
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  overflow: hidden;
+}
+
+.avatar-gray {
+  background: #D9D9D9;
+  color: #333;
+}
+
+.avatar-dark {
+  background: rgba(36, 0, 90, .5);
+  color: var(--purple-soft);
+}
+
+.avatar-purple {
+  background: var(--purple-light);
+  color: var(--purple-dark);
+}
+
+@media (max-width: 960px) {
+  nav {
+    padding: 0 24px;
+    height: 72px;
+  }
+
+  .nav-links {
+    gap: 20px;
+  }
+
+  .nav-links a {
+    font-size: 15px;
+  }
+
+  .btn-primary {
+    padding: 9px 20px;
+    font-size: 14px;
+  }
+
+  .page {
+    padding-top: 88px;
+  }
+
+  .nav-logo img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .nav-logo .logo-m {
+    font-size: 18px;
+  }
+
+  .nav-logo .logo-d {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  nav {
+    padding: 0 16px;
+    height: 64px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .nav-logo img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .nav-logo .logo-m {
+    font-size: 16px;
+  }
+
+  .nav-logo .logo-d {
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .btn-primary {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .page {
+    padding-top: 80px;
+  }
+
+  .tag-pill {
+    padding: 6px 14px;
+    font-size: 14px;
+  }
+
+  .cursor,
+  .cursor-ring {
+    display: none;
+  }
+
+  body {
+    cursor: auto;
+  }
+
+  .btn-primary,
+  .btn-ghost,
+  .tag-pill {
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 480px) {
+  nav {
+    padding: 0 12px;
+    height: 56px;
+  }
+
+  .nav-logo img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nav-logo .logo-m {
+    font-size: 14px;
+  }
+
+  .nav-logo .logo-d {
+    font-size: 10px;
+  }
+
+  .btn-primary {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+
+  .page {
+    padding-top: 72px;
+  }
+
+  .tag-pill {
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+}

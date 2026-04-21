@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Publier - Mia Darling</title>
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="apple-touch-icon" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    body {
+      min-height: 100vh;
+    }
+
+    .write-page {
+      padding: 108px 72px 180px;
+      max-width: 1420px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+
+    .write-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .write-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .4);
+    }
+
+    .write-breadcrumb a {
+      color: rgba(255, 255, 255, .4);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .write-breadcrumb a:hover {
+      color: var(--purple-light);
+    }
+
+    .write-breadcrumb .sep {
+      color: rgba(255, 255, 255, .2);
+    }
+
+    .write-breadcrumb .current {
+      color: var(--purple-light);
+    }
+
+    .word-counter {
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .25);
+      background: var(--glass);
+      padding: 6px 16px;
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, .06);
+      transition: color .3s;
+    }
+
+    .word-counter.active {
+      color: var(--purple-soft);
+    }
+
+    /* ── MAIN WRITING AREA ──────────────────────────── */
+    .editor-card {
+      background: #000;
+      border: 1.5px solid var(--glass-border);
+      border-radius: 48px;
+      padding: 56px 64px;
+      position: relative;
+      overflow: hidden;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+      transition: border-color .3s, box-shadow .3s;
+    }
+
+    .editor-card:focus-within {
+      border-color: rgba(166, 108, 255, .6);
+      box-shadow: 0 0 60px rgba(106, 63, 191, .12), inset 0 0 40px rgba(106, 63, 191, .04);
+    }
+
+    /* Ambient glow inside editor */
+    .editor-card::before {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      top: -100px;
+      right: -100px;
+      background: radial-gradient(circle, rgba(106, 63, 191, .07) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* Auto-height contenteditable styled editor */
+    .editor-placeholder {
+      position: absolute;
+      top: 56px;
+      left: 64px;
+      font-size: 46px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, .2);
+      pointer-events: none;
+      user-select: none;
+      line-height: 1.3;
+      transition: opacity .2s;
+    }
+
+    .editor-placeholder.hidden {
+      opacity: 0;
+    }
+
+    .editor-textarea {
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      width: 100%;
+      flex: 1;
+      min-height: 380px;
+      font-family: var(--font);
+      font-size: 28px;
+      font-weight: 600;
+      line-height: 1.65;
+      color: var(--white);
+      letter-spacing: -.2px;
+      caret-color: var(--purple-light);
+    }
+
+    .editor-textarea::placeholder {
+      color: transparent;
+    }
+
+    /* Word count progress bar inside editor */
+    .editor-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, .05);
+      border-radius: 0 0 48px 48px;
+      overflow: hidden;
+    }
+
+    .editor-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--purple-mid), var(--purple-light));
+      border-radius: 3px;
+      width: 0%;
+      transition: width .3s ease;
+    }
+
+    /* ── TOOLBAR (formatting hints) ─────────────────── */
+    .editor-toolbar {
+      position: absolute;
+      bottom: 20px;
+      right: 32px;
+      display: flex;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .editor-card:focus-within .editor-toolbar {
+      opacity: 1;
+    }
+
+    .toolbar-hint {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .3);
+      background: rgba(255, 255, 255, .05);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    /* ── MOOD SELECTOR ──────────────────────────────── */
+    .mood-section {
+      background: var(--glass);
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: 28px;
+      padding: 28px 36px;
+    }
+
+    .mood-section-label {
+      font-size: 13px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, .4);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 18px;
+    }
+
+    .mood-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .mood-btn {
+      background: rgba(255, 255, 255, .05);
+      border: 1.5px solid rgba(255, 255, 255, .1);
+      border-radius: 50px;
+      padding: 10px 20px;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .6);
+      cursor: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background .2s, border-color .2s, color .2s, transform .15s;
+    }
+
+    .mood-btn:hover {
+      background: rgba(166, 108, 255, .12);
+      border-color: rgba(166, 108, 255, .4);
+      color: var(--white);
+      transform: translateY(-2px);
+    }
+
+    .mood-btn.selected {
+      background: rgba(106, 63, 191, .45);
+      border-color: var(--purple-light);
+      color: var(--white);
+    }
+
+    .mood-emoji {
+      font-size: 18px;
+    }
+
+    /* ── TAG INPUT ───────────────────────────────────── */
+    .tag-section {
+      background: #000;
+      border: 1.5px solid var(--glass-border);
+      border-radius: 50px;
+      padding: 0 28px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .tag-section:focus-within {
+      border-color: rgba(166, 108, 255, .6);
+      box-shadow: 0 0 24px rgba(106, 63, 191, .12);
+    }
+
+    .tag-icon {
+      color: rgba(255, 255, 255, .25);
+      font-size: 16px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .tag-chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex: 1;
+      align-items: center;
+    }
+
+    .tag-chip-added {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(106, 63, 191, .4);
+      border: 1px solid rgba(166, 108, 255, .3);
+      border-radius: 50px;
+      padding: 4px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--white);
+      animation: chipPop .2s cubic-bezier(.34, 1.56, .64, 1);
+    }
+
+    @keyframes chipPop {
+      from {
+        transform: scale(.7);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .chip-remove {
+      background: none;
+      border: none;
+      cursor: none;
+      color: rgba(255, 255, 255, .5);
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      transition: color .2s;
+      font-family: var(--font);
+    }
+
+    .chip-remove:hover {
+      color: #ff8080;
+    }
+
+    .tag-input {
+      background: none;
+      border: none;
+      outline: none;
+      font-family: var(--font);
+      font-size: 16px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .35);
+      min-width: 120px;
+      flex: 1;
+    }
+
+    .tag-input::placeholder {
+      color: rgba(255, 255, 255, .25);
+    }
+
+    .tag-input:focus {
+      color: var(--white);
+    }
+
+    /* ── ANONYMITY BADGE ─────────────────────────────── */
+    .anon-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 28px;
+      background: rgba(37, 1, 91, .25);
+      border: 1px solid rgba(106, 63, 191, .25);
+      border-radius: 20px;
+    }
+
+    .anon-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(37, 1, 91, .6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .anon-icon svg {
+      width: 18px;
+      color: var(--purple-soft);
+    }
+
+    .anon-text {
+      flex: 1;
+    }
+
+    .anon-text strong {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--white);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .anon-text span {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, .45);
+    }
+
+    .anon-check {
+      color: var(--purple-light);
+      font-size: 20px;
+    }
+
+    /* ── BOTTOM ACTION BAR ──────────────────────────── */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 18px 72px;
+      background: rgba(0, 0, 0, .9);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(166, 108, 255, .12);
+      z-index: 50;
+    }
+
+    .bottom-bar-inner {
+      max-width: 1380px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .bottom-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .char-bubble {
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .3);
+      background: rgba(255, 255, 255, .06);
+      padding: 8px 18px;
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    .char-bubble .count {
+      color: var(--purple-soft);
+    }
+
+    .draft-btn {
+      background: none;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 50px;
+      padding: 12px 26px;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .5);
+      cursor: none;
+      transition: background .2s, color .2s, border-color .2s;
+    }
+
+    .draft-btn:hover {
+      background: rgba(255, 255, 255, .06);
+      color: var(--white);
+      border-color: rgba(255, 255, 255, .2);
+    }
+
+    .publish-btn {
+      background: var(--purple-light);
+      color: var(--purple-dark);
+      border: none;
+      padding: 14px 44px;
+      border-radius: 50px;
+      font-family: var(--font);
+      font-size: 17px;
+      font-weight: 800;
+      cursor: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 0 30px rgba(166, 108, 255, .4);
+    }
+
+    .publish-btn:hover {
+      background: var(--purple-soft);
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(166, 108, 255, .6);
+    }
+
+    .publish-btn:disabled {
+      background: rgba(166, 108, 255, .3);
+      color: rgba(37, 1, 91, .5);
+      box-shadow: none;
+      transform: none;
+      cursor: not-allowed;
+    }
+
+    .publish-btn svg {
+      width: 18px;
+    }
+
+    /* ── SUCCESS OVERLAY ─────────────────────────────── */
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .85);
+      backdrop-filter: blur(8px);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .4s;
+    }
+
+    .success-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .success-card {
+      background: linear-gradient(135deg, #0d0020, #1a0040);
+      border: 1px solid rgba(166, 108, 255, .4);
+      border-radius: 32px;
+      padding: 60px 56px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      transform: scale(.9) translateY(20px);
+      transition: transform .5s cubic-bezier(.34, 1.56, .64, 1);
+    }
+
+    .success-overlay.open .success-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .success-orb {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--purple-mid), var(--purple-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 28px;
+      animation: successPop .5s cubic-bezier(.34, 1.56, .64, 1) .2s both;
+      box-shadow: 0 0 50px rgba(106, 63, 191, .5);
+    }
+
+    @keyframes successPop {
+      from {
+        transform: scale(0);
+      }
+
+      to {
+        transform: scale(1);
+      }
+    }
+
+    .success-orb svg {
+      width: 36px;
+      color: var(--purple-soft);
+    }
+
+    .success-title {
+      font-size: 30px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .success-subtitle {
+      font-size: 15px;
+      color: rgba(255, 255, 255, .5);
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+
+    .success-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 960px) {
+      .write-page {
+        padding: 108px 20px 160px;
+      }
+
+      .editor-card {
+        padding: 32px 28px;
+        border-radius: 28px;
+      }
+
+      .editor-textarea {
+        font-size: 22px;
+      }
+
+      .editor-placeholder {
+        top: 32px;
+        left: 28px;
+        font-size: 30px;
+      }
+
+      .bottom-bar {
+        padding: 14px 20px;
+      }
+
+      .publish-btn {
+        padding: 12px 28px;
+        font-size: 15px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .write-page {
+        padding: 88px 16px 140px;
+      }
+
+      .editor-card {
+        padding: 24px 20px;
+        border-radius: 24px;
+      }
+
+      .editor-textarea {
+        font-size: 18px;
+        min-height: 280px;
+      }
+
+      .editor-placeholder {
+        top: 24px;
+        left: 20px;
+        font-size: 24px;
+      }
+
+      .editor-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .mood-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .mood-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+
+      .bottom-bar {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .publish-btn {
+        padding: 10px 24px;
+        font-size: 14px;
+      }
+
+      .success-card {
+        padding: 40px 32px;
+        max-width: 90%;
+      }
+
+      .success-title {
+        font-size: 24px;
+      }
+
+      .cursor,
+      .cursor-ring {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .write-page {
+        padding: 72px 12px 120px;
+      }
+
+      .editor-card {
+        padding: 20px 16px;
+        border-radius: 20px;
+      }
+
+      .editor-textarea {
+        font-size: 16px;
+        min-height: 240px;
+      }
+
+      .editor-placeholder {
+        top: 20px;
+        left: 16px;
+        font-size: 20px;
+      }
+
+      .mood-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .tag-chip-added {
+        font-size: 12px;
+        padding: 6px 12px;
+      }
+
+      .publish-btn {
+        padding: 8px 20px;
+        font-size: 13px;
+      }
+
+      .success-card {
+        padding: 32px 24px;
+      }
+
+      .success-title {
+        font-size: 20px;
+      }
+
+      .success-subtitle {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- Success Overlay -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-card">
+      <div class="success-orb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </div>
+      <h2 class="success-title">Publié anonymement ✦</h2>
+      <p class="success-subtitle">
+        Votre témoignage a été partagé sans aucune information vous identifiant.
+        Votre voix voyage — votre identité reste protégée.
+      </p>
+      <div class="success-actions">
+        <a href="mes-publications.html" class="btn-ghost">Mes publications</a>
+        <button class="btn-primary" onclick="resetAndWrite()">Écrire un autre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img src="assets/logo.png" alt="Mia Darling">
+      <span class="nav-logo-text">
+        <span class="logo-m">Mia</span>
+        <span class="logo-d">Darling</span>
+      </span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Accueil</a></li>
+      <li><a href="index.html#recents">Explorer</a></li>
+      <li><a href="mes-publications.html">Mes publications</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="publier.html" class="btn-primary">Exprimer vous</a>
+    </div>
+  </nav>
+
+  <!-- MAIN WRITING INTERFACE -->
+  <div class="write-page page">
+
+    <!-- Breadcrumb -->
+    <div class="write-topbar reveal">
+      <div class="write-breadcrumb">
+        <a href="index.html">Accueil</a>
+        <span class="sep">›</span>
+        <span class="current">Écrire un témoignage</span>
+      </div>
+      <div class="word-counter" id="wordCounter">0 mots</div>
+    </div>
+
+    <!-- Editor -->
+    <div class="editor-card reveal d1">
+      <div class="editor-placeholder" id="editorPlaceholder">Commencer à écrire…</div>
+      <textarea class="editor-textarea" id="editorTextarea" spellcheck="true" maxlength="2000"
+        aria-label="Votre témoignage"></textarea>
+      <div class="editor-progress">
+        <div class="editor-progress-fill" id="progressFill"></div>
+      </div>
+      <div class="editor-toolbar">
+        <span class="toolbar-hint">Shift+Enter → nouvelle ligne</span>
+        <span class="toolbar-hint">2 000 caractères max</span>
+      </div>
+    </div>
+
+    <!-- Mood / Emotion picker -->
+    <div class="mood-section reveal d2">
+      <div class="mood-section-label">Comment vous sentez-vous ?</div>
+      <div class="mood-grid">
+        <button class="mood-btn" onclick="toggleMood(this,'Triste')">
+          <span class="mood-emoji">😢</span> Triste
+        </button>
+        <button class="mood-btn" onclick="toggleMood(this,'Épuisé')">
+          <span class="mood-emoji">😪</span> Épuisé·e
+        </button>
+        <button class="mood-btn" onclick="toggleMood(this,'Anxieux')">
+          <span class="mood-emoji">😰</span> Anxieux·se
+        </button>
+        <button class="mood-btn" onclick="toggleMood(this,'En colère')">
+          <span class="mood-emoji">😤</span> En colère
+        </button>
+        <button class="mood-btn" onclick="toggleMood(this,'Soulagé')">
+          <span class="mood-emoji">😮‍💨</span> Soulagé·e
+        </button>
+        <button class="mood-btn" onclick="toggleMood(this,'Espoir')">
+          <span class="mood-emoji">🌱</span> Espoir
+        </button>
+        <button class="mood-btn" onclick="toggleMood(this,'Perdu')">
+          <span class="mood-emoji">🌫️</span> Perdu·e
+        </button>
+        <button class="mood-btn" onclick="toggleMood(this,'Gratitude')">
+          <span class="mood-emoji">🤍</span> Gratitude
+        </button>
+      </div>
+    </div>
+
+    <!-- Tag input -->
+    <div class="tag-section reveal d3" id="tagSection">
+      <span class="tag-icon">#</span>
+      <div class="tag-chips-wrap" id="tagChipsWrap">
+        <input type="text" class="tag-input" id="tagInput" placeholder="Ajouter un tag (Entrée pour valider)"
+          maxlength="30" />
+      </div>
+    </div>
+
+    <!-- Anonymity guarantee -->
+    <div class="anon-section reveal d4">
+      <div class="anon-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="M9 12l2 2 4-4" />
+        </svg>
+      </div>
+      <div class="anon-text">
+        <strong>Publication 100% anonyme</strong>
+        <span>Toutes les métadonnées sont supprimées. Votre identité ne sera jamais révélée.</span>
+      </div>
+      <span class="anon-check">✓</span>
+    </div>
+
+  </div><!-- /write-page -->
+
+  <!-- FIXED BOTTOM ACTION BAR -->
+  <div class="bottom-bar">
+    <div class="bottom-bar-inner">
+      <div class="bottom-bar-left">
+        <div class="char-bubble"><span class="count" id="charCount">0</span> / 2000 caractères</div>
+        <button class="draft-btn" id="draftBtn">Sauvegarder brouillon</button>
+      </div>
+      <button class="publish-btn" id="publishBtn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" />
+        </svg>
+        Publier anonymement
+      </button>
+    </div>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Configuration Supabase -->
+  <script src="js/supabase-config.js"></script>
+
+  <script>
+    /* ── CURSOR ──────────────────────────────────── */
+    const cursor = document.getElementById('cursor'), ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function t() { cursor.style.cssText += `left:${mx}px;top:${my}px;`; rx += (mx - rx) * .12; ry += (my - ry) * .12; ring.style.cssText += `left:${rx}px;top:${ry}px;`; requestAnimationFrame(t); })();
+
+    /* ── REVEAL ─────────────────────────────────── */
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }), { threshold: .05 });
+    document.querySelectorAll('.reveal').forEach(el => { io.observe(el); setTimeout(() => el.classList.add('visible'), 200); });
+
+    /* ── EDITOR ─────────────────────────────────── */
+    const textarea = document.getElementById('editorTextarea');
+    const placeholder = document.getElementById('editorPlaceholder');
+    const charCountEl = document.getElementById('charCount');
+    const wordCounterEl = document.getElementById('wordCounter');
+    const progressFill = document.getElementById('progressFill');
+    const publishBtn = document.getElementById('publishBtn');
+    const savingStatus = document.getElementById('savingStatus');
+
+    let autoSaveTimer;
+    let availableMoods = [];
+
+    // Charger les moods disponibles
+    async function loadMoods() {
+      availableMoods = await MiaDarling.MoodsAPI.getAll();
+    }
+    loadMoods();
+
+    // Charger le brouillon existant
+    async function loadDraft() {
+      const draft = await MiaDarling.DraftsAPI.getCurrent();
+      if (draft && draft.content) {
+        textarea.value = draft.content;
+        placeholder.classList.add('hidden');
+        charCountEl.textContent = draft.content.length;
+        const words = draft.content.trim().split(/\s+/).length;
+        wordCounterEl.textContent = words + ' mot' + (words !== 1 ? 's' : '');
+        progressFill.style.width = Math.min((draft.content.length / 2000) * 100, 100) + '%';
+        publishBtn.disabled = draft.content.length < 10;
+
+        // Restaurer les moods
+        draft.moods.forEach(m => {
+          selectedMoods.add(m.id);
+          document.querySelectorAll('.mood-btn').forEach(btn => {
+            if (btn.textContent.includes(m.name)) {
+              btn.classList.add('selected');
+            }
+          });
+        });
+
+        // Restaurer les tags
+        draft.tags.forEach(t => {
+          addTag('#' + t.name);
+        });
+      }
+    }
+    loadDraft();
+
+    textarea.addEventListener('input', () => {
+      const val = textarea.value;
+      const len = val.length;
+      const words = val.trim() === '' ? 0 : val.trim().split(/\s+/).length;
+
+      // Placeholder
+      placeholder.classList.toggle('hidden', len > 0);
+
+      // Counts
+      charCountEl.textContent = len;
+      wordCounterEl.textContent = words + ' mot' + (words !== 1 ? 's' : '');
+      wordCounterEl.classList.toggle('active', len > 0);
+
+      // Progress bar
+      progressFill.style.width = Math.min((len / 2000) * 100, 100) + '%';
+
+      // Publish button
+      publishBtn.disabled = len < 10;
+
+      // Auto-save to Supabase
+      savingStatus.textContent = 'Modification…';
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(async () => {
+        const moodIds = [...selectedMoods];
+        const tagNames = [...addedTags].map(t => t.replace('#', ''));
+        await MiaDarling.DraftsAPI.save(val, moodIds, []);
+        savingStatus.textContent = '✓ Brouillon sauvegardé';
+        setTimeout(() => { savingStatus.textContent = 'Brouillon'; }, 2000);
+      }, 1500);
+    });
+
+    /* ── MOODS ──────────────────────────────────── */
+    const selectedMoods = new Set();
+    function toggleMood(btn, mood) {
+      // Trouver l'ID du mood
+      const moodData = availableMoods.find(m => m.name === mood);
+      const moodId = moodData ? moodData.id : null;
+
+      if (selectedMoods.has(moodId)) {
+        selectedMoods.delete(moodId);
+        btn.classList.remove('selected');
+        removeTag('#' + mood);
+      } else {
+        selectedMoods.add(moodId);
+        btn.classList.add('selected');
+        addTag('#' + mood);
+      }
+    }
+
+    /* ── TAGS ───────────────────────────────────── */
+    const tagInput = document.getElementById('tagInput');
+    const tagChipsWrap = document.getElementById('tagChipsWrap');
+    const addedTags = new Set();
+
+    tagInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const raw = tagInput.value.trim().replace(/^#/, '');
+        if (raw) addTag('#' + raw);
+        tagInput.value = '';
+      }
+      if (e.key === 'Backspace' && tagInput.value === '' && addedTags.size > 0) {
+        const last = [...addedTags].pop();
+        removeTag(last);
+      }
+    });
+
+    function addTag(tag) {
+      if (addedTags.has(tag) || addedTags.size >= 5) return;
+      addedTags.add(tag);
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip-added';
+      chip.dataset.tag = tag;
+      chip.innerHTML = `${tag} <button class="chip-remove" onclick="removeTag('${tag}')">×</button>`;
+      tagChipsWrap.insertBefore(chip, tagInput);
+    }
+
+    function removeTag(tag) {
+      addedTags.delete(tag);
+      const chip = tagChipsWrap.querySelector(`[data-tag="${tag}"]`);
+      if (chip) chip.remove();
+      // unselect mood btn if it was mood-driven
+      const moodName = tag.replace('#', '');
+      const moodData = availableMoods.find(m => m.name === moodName);
+      if (moodData && selectedMoods.has(moodData.id)) {
+        selectedMoods.delete(moodData.id);
+        document.querySelectorAll('.mood-btn').forEach(b => {
+          if (b.textContent.trim().includes(moodName)) b.classList.remove('selected');
+        });
+      }
+    }
+
+    /* ── DRAFT SAVE ─────────────────────────────── */
+    document.getElementById('draftBtn').addEventListener('click', async () => {
+      const moodIds = [...selectedMoods];
+      const content = textarea.value;
+      await MiaDarling.DraftsAPI.save(content, moodIds, []);
+      savingStatus.textContent = '✓ Brouillon sauvegardé';
+      setTimeout(() => { savingStatus.textContent = 'Brouillon'; }, 2200);
+    });
+
+    /* ── PUBLISH ────────────────────────────────── */
+    publishBtn.addEventListener('click', async () => {
+      if (publishBtn.disabled) return;
+
+      const content = textarea.value.trim();
+      const moodIds = [...selectedMoods];
+      const tagNames = [...addedTags].map(t => t.replace('#', ''));
+
+      publishBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;animation:spin .6s linear infinite"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".2"/><path d="M21 12a9 9 0 00-9-9"/></svg> Publication…`;
+      publishBtn.disabled = true;
+
+      try {
+        const post = await MiaDarling.PostsAPI.create(content, moodIds, tagNames);
+
+        if (post) {
+          // Supprimer le brouillon
+          await MiaDarling.DraftsAPI.delete();
+
+          document.getElementById('successOverlay').classList.add('open');
+          publishBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg> Publier anonymement`;
+        } else {
+          alert('Erreur lors de la publication. Veuillez réessayer.');
+          publishBtn.disabled = false;
+          publishBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg> Publier anonymement`;
+        }
+      } catch (error) {
+        console.error('Erreur publication:', error);
+        alert('Erreur lors de la publication. Veuillez réessayer.');
+        publishBtn.disabled = false;
+        publishBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg> Publier anonymement`;
+      }
+    });
+
+    function resetAndWrite() {
+      document.getElementById('successOverlay').classList.remove('open');
+      textarea.value = '';
+      placeholder.classList.remove('hidden');
+      charCountEl.textContent = '0';
+      wordCounterEl.textContent = '0 mots';
+      wordCounterEl.classList.remove('active');
+      progressFill.style.width = '0%';
+      publishBtn.disabled = true;
+      addedTags.clear();
+      selectedMoods.clear();
+      tagChipsWrap.querySelectorAll('.tag-chip-added').forEach(c => c.remove());
+      document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+      textarea.focus();
+    }
+
+    /* ── SPIN KEYFRAME ──────────────────────────── */
+    const style = document.createElement('style');
+    style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+    document.head.appendChild(style);
+  </script>
+</body>
+
+</html>
