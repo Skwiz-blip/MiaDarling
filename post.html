@@ -868,19 +868,28 @@
         const result = await MiaDarling.ReactionsAPI.toggle(currentPostId, reactionId);
 
         if (result.success) {
-          const wasActive = btn.classList.contains('active');
-          document.querySelectorAll('.reaction-btn').forEach(b => b.classList.remove('active'));
+          const countEl = btn.querySelector('.reaction-count');
+          const currentCount = parseInt(countEl.textContent.replace(/\s/g, ''));
 
-          if (!wasActive) {
+          if (result.action === 'added') {
+            // Retirer les autres réactions actives visuellement
+            document.querySelectorAll('.reaction-btn.active').forEach(activeBtn => {
+              if (activeBtn !== btn) {
+                activeBtn.classList.remove('active');
+                const activeCountEl = activeBtn.querySelector('.reaction-count');
+                const activeCount = parseInt(activeCountEl.textContent.replace(/\s/g, ''));
+                activeCountEl.textContent = Math.max(0, activeCount - 1).toLocaleString('fr-FR');
+              }
+            });
             btn.classList.add('active');
-            const countEl = btn.querySelector('.reaction-count');
-            const currentCount = parseInt(countEl.textContent.replace(/\s/g, ''));
             countEl.textContent = (currentCount + 1).toLocaleString('fr-FR');
-          } else {
-            const countEl = btn.querySelector('.reaction-count');
-            const currentCount = parseInt(countEl.textContent.replace(/\s/g, ''));
+          } else if (result.action === 'removed') {
+            btn.classList.remove('active');
             countEl.textContent = Math.max(0, currentCount - 1).toLocaleString('fr-FR');
           }
+
+          // Recharger les réactions pour synchroniser
+          await loadReactions();
         }
       });
     });
@@ -954,13 +963,15 @@
     async function likeComment(btn, commentId) {
       const result = await MiaDarling.CommentsAPI.toggleLike(commentId);
 
+      if (!result.success) return;
+
       const n = btn.querySelector('span');
       const val = parseInt(n.textContent);
 
       if (result.action === 'liked') {
         n.textContent = val + 1;
         btn.style.color = '#ff6b9d';
-      } else {
+      } else if (result.action === 'unliked') {
         n.textContent = Math.max(0, val - 1);
         btn.style.color = '';
       }

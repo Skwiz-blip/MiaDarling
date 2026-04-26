@@ -99,7 +99,7 @@ const PostsAPI = {
             .from('posts')
             .select(`
                 *,
-                anonymous_sessions (anonymous_name),
+                anonymous_sessions!posts_session_token_fkey (anonymous_name),
                 post_moods (moods (id, name, emoji)),
                 post_tags (tags (id, name, slug))
             `)
@@ -120,7 +120,7 @@ const PostsAPI = {
             .from('posts')
             .select(`
                 *,
-                anonymous_sessions (anonymous_name),
+                anonymous_sessions!posts_session_token_fkey (anonymous_name),
                 post_moods (moods (id, name, emoji)),
                 post_tags (tags (id, name, slug))
             `)
@@ -142,7 +142,7 @@ const PostsAPI = {
             .from('posts')
             .select(`
                 *,
-                anonymous_sessions (anonymous_name),
+                anonymous_sessions!posts_session_token_fkey (anonymous_name),
                 post_moods (moods (id, name, emoji)),
                 post_tags (tags (id, name, slug))
             `)
@@ -267,11 +267,28 @@ const PostsAPI = {
      */
     async recordView(postId) {
         const sessionToken = SessionManager.getToken();
+        if (!sessionToken) {
+            await SessionManager.getOrCreateSession();
+        }
 
-        await supabaseClient.from('post_views').insert({
-            post_id: postId,
-            session_token: sessionToken
-        });
+        // Vérifier si déjà vu par cette session
+        const { data: existing } = await supabaseClient
+            .from('post_views')
+            .select('id')
+            .eq('post_id', postId)
+            .eq('session_token', SessionManager.getToken())
+            .single();
+
+        if (!existing) {
+            // Enregistrer la vue
+            await supabaseClient.from('post_views').insert({
+                post_id: postId,
+                session_token: SessionManager.getToken()
+            });
+
+            // Incrémenter le compteur de vues
+            await supabaseClient.rpc('increment_view_count', { post_id: postId });
+        }
     },
 
     /**
@@ -441,7 +458,7 @@ const CommentsAPI = {
             .from('comments')
             .select(`
                 *,
-                anonymous_sessions (anonymous_name)
+                anonymous_sessions!comments_session_token_fkey (anonymous_name)
             `)
             .eq('post_id', postId)
             .eq('status', 'visible')
@@ -474,7 +491,7 @@ const CommentsAPI = {
             })
             .select(`
                 *,
-                anonymous_sessions (anonymous_name)
+                anonymous_sessions!comments_session_token_fkey (anonymous_name)
             `)
             .single();
 
@@ -511,30 +528,29 @@ const CommentsAPI = {
         }
 
         // Vérifier si déjà liké
-        const { data: existing } = await supabaseClient
+        const { data: existing, error: checkError } = await supabaseClient
             .from('comment_likes')
-            .select('*')
+            .select('id')
             .eq('comment_id', commentId)
             .eq('session_token', SessionManager.getToken())
-            .single();
+            .maybeSingle();
 
         if (existing) {
-            await supabaseClient
+            const { error } = await supabaseClient
                 .from('comment_likes')
                 .delete()
-                .eq('comment_id', commentId)
-                .eq('session_token', SessionManager.getToken());
+                .eq('id', existing.id);
 
-            return { action: 'unliked' };
+            return { action: 'unliked', success: !error };
         } else {
-            await supabaseClient
+            const { error } = await supabaseClient
                 .from('comment_likes')
                 .insert({
                     comment_id: commentId,
                     session_token: SessionManager.getToken()
                 });
 
-            return { action: 'liked' };
+            return { action: 'liked', success: !error };
         }
     },
 
