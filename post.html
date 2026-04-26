@@ -781,9 +781,17 @@
     let userReactions = [];
 
     async function loadPost() {
-      // Récupérer l'ID du post depuis l'URL
+      // Récupérer l'ID du post depuis l'URL ou sessionStorage
       const urlParams = new URLSearchParams(window.location.search);
       currentPostId = urlParams.get('id');
+
+      // Si pas dans l'URL, essayer sessionStorage
+      if (!currentPostId) {
+        currentPostId = sessionStorage.getItem('viewPostId');
+        if (currentPostId) {
+          sessionStorage.removeItem('viewPostId'); // Nettoyer
+        }
+      }
 
       if (!currentPostId) {
         // Afficher un message d'erreur au lieu de rediriger
@@ -792,6 +800,8 @@
         console.warn('Pas d\'ID dans l\'URL');
         return;
       }
+
+      console.log('Chargement du post ID:', currentPostId);
 
       try {
         // Charger le post

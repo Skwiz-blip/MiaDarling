@@ -728,8 +728,25 @@
       <h2 class="success-title">Publié anonymement ✦</h2>
       <p class="success-subtitle">
         Votre témoignage a été partagé sans aucune information vous identifiant.
-        Votre voix voyage — votre identité reste protégée.
       </p>
+
+      <!-- Code de récupération -->
+      <div class="recovery-section" id="recoverySection"
+        style="margin: 24px 0; padding: 20px; background: rgba(166, 108, 255, 0.1); border-radius: 16px; border: 1px solid rgba(166, 108, 255, 0.3);">
+        <p style="font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 8px;">Conservez ce code pour retrouver
+          vos publications :</p>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+          <code id="recoveryCodeDisplay"
+            style="font-size: 22px; font-weight: 800; color: var(--purple-light); letter-spacing: 2px;">MIA-XXXX-XXXX</code>
+          <button onclick="copyRecoveryCode()"
+            style="background: rgba(255,255,255,0.1); border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 600;">Copier</button>
+        </div>
+        <p style="font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 12px;">
+          <a href="recuperation.html" style="color: var(--purple-soft);">Récupérer mon compte</a> si vous changez
+          d'appareil.
+        </p>
+      </div>
+
       <div class="success-actions">
         <a href="mes-publications.html" class="btn-ghost">Mes publications</a>
         <button class="btn-primary" onclick="resetAndWrite()">Écrire un autre</button>
@@ -1033,6 +1050,12 @@
           // Supprimer le brouillon
           await MiaDarling.DraftsAPI.delete();
 
+          // Récupérer et afficher le code de récupération
+          const recoveryCode = await MiaDarling.SessionManager.getRecoveryCode();
+          if (recoveryCode) {
+            document.getElementById('recoveryCodeDisplay').textContent = recoveryCode;
+          }
+
           document.getElementById('successOverlay').classList.add('open');
           publishBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg> Publier anonymement`;
         } else {
@@ -1062,6 +1085,31 @@
       tagChipsWrap.querySelectorAll('.tag-chip-added').forEach(c => c.remove());
       document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
       textarea.focus();
+    }
+
+    // Copier le code de récupération
+    async function copyRecoveryCode() {
+      const code = document.getElementById('recoveryCodeDisplay').textContent;
+      try {
+        await navigator.clipboard.writeText(code);
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = 'Copié !';
+        btn.style.color = '#80ff90';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.color = '';
+        }, 2000);
+      } catch (err) {
+        // Fallback pour les navigateurs plus anciens
+        const textArea = document.createElement('textarea');
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Code copié : ' + code);
+      }
     }
 
     /* ── SPIN KEYFRAME ──────────────────────────── */

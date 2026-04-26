@@ -636,6 +636,39 @@
       </div>
     </div>
 
+    <!-- Account Recovery Section -->
+    <div class="account-section reveal d1" id="accountSection"
+      style="background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: var(--radius-card); padding: 24px 28px; margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">Mon code de récupération</h3>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5);">Conservez ce code pour retrouver vos publications
+            sur un autre appareil.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <code id="myRecoveryCode"
+            style="font-size: 18px; font-weight: 800; color: var(--purple-light); letter-spacing: 1px;">Chargement...</code>
+          <button onclick="copyMyRecoveryCode()"
+            style="background: rgba(255,255,255,0.1); border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 600; font-family: var(--font);">Copier</button>
+        </div>
+      </div>
+
+      <!-- Email option -->
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div id="emailSection">
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 12px;">
+            <span id="emailStatus">Ajoutez un email pour récupérer votre compte plus facilement.</span>
+          </p>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <input type="email" id="recoveryEmailInput" placeholder="votre@email.com"
+              style="flex: 1; min-width: 200px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 16px; font-size: 14px; color: var(--white); font-family: var(--font);">
+            <button onclick="saveRecoveryEmail()" id="saveEmailBtn"
+              style="background: var(--purple-light); color: var(--purple-dark); border: none; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font);">Sauvegarder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Filter bar -->
     <div class="filter-bar reveal d1">
       <button class="filter-pill active" onclick="setFilter(this,'tous')">Tous</button>
@@ -688,6 +721,65 @@
     let publications = [];
     let cardToDelete = null;
     let currentFilter = 'tous';
+
+    // Charger le code de récupération et l'email
+    async function loadAccountInfo() {
+      const sessionInfo = await MiaDarling.SessionManager.getSessionInfo();
+      const recoveryCode = await MiaDarling.SessionManager.getRecoveryCode();
+
+      if (recoveryCode) {
+        document.getElementById('myRecoveryCode').textContent = recoveryCode;
+      }
+
+      if (sessionInfo?.recovery_email) {
+        document.getElementById('recoveryEmailInput').value = sessionInfo.recovery_email;
+        document.getElementById('emailStatus').textContent = 'Email associé : ' + sessionInfo.recovery_email;
+      }
+    }
+
+    // Copier le code de récupération
+    async function copyMyRecoveryCode() {
+      const code = document.getElementById('myRecoveryCode').textContent;
+      try {
+        await navigator.clipboard.writeText(code);
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = 'Copié !';
+        btn.style.color = '#80ff90';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.color = '';
+        }, 2000);
+      } catch (err) {
+        alert('Code copié : ' + code);
+      }
+    }
+
+    // Sauvegarder l'email de récupération
+    async function saveRecoveryEmail() {
+      const email = document.getElementById('recoveryEmailInput').value.trim();
+
+      if (!email || !email.includes('@')) {
+        alert('Veuillez entrer une adresse email valide');
+        return;
+      }
+
+      const btn = document.getElementById('saveEmailBtn');
+      btn.disabled = true;
+      btn.textContent = 'Sauvegarde...';
+
+      const result = await MiaDarling.SessionManager.setRecoveryEmail(email);
+
+      btn.disabled = false;
+      btn.textContent = 'Sauvegarder';
+
+      if (result.success) {
+        document.getElementById('emailStatus').textContent = 'Email associé : ' + email;
+        alert('Email sauvegardé avec succès !');
+      } else {
+        alert('Erreur : ' + result.error);
+      }
+    }
 
     async function loadPublications() {
       publications = await MiaDarling.PostsAPI.getMyPosts();
@@ -820,6 +912,7 @@
 
     // Charger les publications au démarrage
     loadPublications();
+    loadAccountInfo();
   </script>
 
   <!-- FOOTER -->

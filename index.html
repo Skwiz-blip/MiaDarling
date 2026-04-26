@@ -435,11 +435,12 @@
       display: flex;
       gap: 20px;
       width: max-content;
-      animation: scrollCards 30s linear infinite;
+      /* Animation désactivée pour permettre les clics */
+      /* animation: scrollCards 30s linear infinite; */
     }
 
     .cards-track:hover {
-      animation-play-state: paused;
+      /* animation-play-state: paused; */
     }
 
     @keyframes scrollCards {
@@ -465,6 +466,9 @@
       gap: 12px;
       transition: background .3s, border-color .3s, transform .3s;
       cursor: pointer;
+      position: relative;
+      z-index: 10;
+      pointer-events: auto;
     }
 
     .testimonial-card:hover {
@@ -1362,8 +1366,9 @@
       track.innerHTML = '<div class="loading-placeholder" style="text-align:center;padding:40px;color:rgba(255,255,255,.4);">Chargement...</div>';
 
       try {
-        // Charger les posts depuis Supabase
-        postsData = await MiaDarling.PostsAPI.getRecent(20);
+        // Charger les posts tendance depuis Supabase (mélange fraîcheur + popularité)
+        postsData = await MiaDarling.PostsAPI.getTrending(20);
+        console.log('Posts chargés:', postsData.length, postsData);
 
         if (postsData.length === 0) {
           track.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,.4);">Aucun témoignage pour le moment. Soyez le premier !</div>';
@@ -1383,7 +1388,14 @@
 
           card.addEventListener('click', (e) => {
             if (!e.target.classList.contains('card-heart')) {
-              window.location.href = `post.html?id=${post.id}`;
+              console.log('Clic sur post:', post.id, post.content.substring(0, 30));
+              if (post.id) {
+                // Stocker l'ID dans sessionStorage car l'URL est réécrite
+                sessionStorage.setItem('viewPostId', post.id);
+                window.location.href = 'post.html';
+              } else {
+                console.error('Post sans ID:', post);
+              }
             }
           });
 
@@ -1429,7 +1441,15 @@
         });
       });
     }
-    loadPosts();
+
+    // Charger les posts quand le DOM est prêt
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPosts();
+    });
+    // Aussi charger immédiatement si le DOM est déjà prêt
+    if (document.readyState !== 'loading') {
+      loadPosts();
+    }
 
     const revealEls = document.querySelectorAll('.reveal');
     const io = new IntersectionObserver(entries => {
@@ -1477,33 +1497,42 @@
     document.querySelectorAll('.open-modal').forEach(btn => {
       btn.addEventListener('click', () => overlay.classList.add('open'));
     });
-    modalClose.addEventListener('click', () => overlay.classList.remove('open'));
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
 
-    textArea.addEventListener('input', () => {
-      charCount.textContent = textArea.value.length;
-    });
+    if (modalClose) {
+      modalClose.addEventListener('click', () => overlay.classList.remove('open'));
+    }
+    if (overlay) {
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+    }
 
-    btnSend.addEventListener('click', async () => {
-      const text = textArea.value.trim();
-      if (!text || text.length < 10) {
-        alert('Votre témoignage doit contenir au moins 10 caractères.');
-        return;
-      }
+    if (textArea) {
+      textArea.addEventListener('input', () => {
+        charCount.textContent = textArea.value.length;
+      });
+    }
 
-      // Publier via Supabase
-      const post = await MiaDarling.PostsAPI.create(text, [], []);
+    if (btnSend) {
+      btnSend.addEventListener('click', async () => {
+        const text = textArea.value.trim();
+        if (!text || text.length < 10) {
+          alert('Votre témoignage doit contenir au moins 10 caractères.');
+          return;
+        }
 
-      if (post) {
-        // Recharger les posts
-        await loadPosts();
-        textArea.value = '';
-        charCount.textContent = '0';
-        overlay.classList.remove('open');
-      } else {
-        alert('Erreur lors de la publication. Veuillez réessayer.');
-      }
-    });
+        // Publier via Supabase
+        const post = await MiaDarling.PostsAPI.create(text, [], []);
+
+        if (post) {
+          // Recharger les posts
+          await loadPosts();
+          textArea.value = '';
+          charCount.textContent = '0';
+          overlay.classList.remove('open');
+        } else {
+          alert('Erreur lors de la publication. Veuillez réessayer.');
+        }
+      });
+    }
 
     window.addEventListener('scroll', () => {
       const links = document.querySelectorAll('.nav-links a');
