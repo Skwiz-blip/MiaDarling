@@ -41,45 +41,6 @@
       color: var(--white);
       font-family: var(--font);
       overflow-x: hidden;
-      cursor: none;
-    }
-
-    .cursor {
-      position: fixed;
-      width: 12px;
-      height: 12px;
-      background: var(--purple-light);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 9999;
-      transform: translate(-50%, -50%);
-      transition: transform .15s ease, width .2s, height .2s, background .2s;
-    }
-
-    .cursor-ring {
-      position: fixed;
-      width: 36px;
-      height: 36px;
-      border: 1.5px solid rgba(166, 108, 255, .5);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 9998;
-      transform: translate(-50%, -50%);
-      transition: transform .35s cubic-bezier(.25, .46, .45, .94), width .25s, height .25s;
-    }
-
-    body:has(a:hover) .cursor,
-    body:has(button:hover) .cursor {
-      width: 20px;
-      height: 20px;
-      background: var(--purple-soft);
-    }
-
-    body:has(a:hover) .cursor-ring,
-    body:has(button:hover) .cursor-ring {
-      width: 54px;
-      height: 54px;
-      border-color: var(--purple-light);
     }
 
 
@@ -286,7 +247,7 @@
       border-radius: 50px;
       font-size: 17px;
       font-weight: 700;
-      cursor: none;
+      cursor: pointer;
       transition: background .2s, transform .15s, box-shadow .2s;
       box-shadow: 0 0 30px rgba(166, 108, 255, .4);
     }
@@ -305,7 +266,7 @@
       border-radius: 50px;
       font-size: 17px;
       font-weight: 600;
-      cursor: none;
+      cursor: pointer;
       transition: background .2s, border-color .2s, transform .15s;
     }
 
@@ -503,7 +464,7 @@
       flex-direction: column;
       gap: 12px;
       transition: background .3s, border-color .3s, transform .3s;
-      cursor: default;
+      cursor: pointer;
     }
 
     .testimonial-card:hover {
@@ -539,7 +500,7 @@
       margin-left: auto;
       font-size: 14px;
       color: rgba(255, 255, 255, .3);
-      cursor: none;
+      cursor: pointer;
       transition: color .2s, transform .2s;
     }
 
@@ -884,11 +845,11 @@
       border-radius: 50%;
       color: rgba(255, 255, 255, .6);
       font-size: 18px;
-      cursor: none;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background .2s;
+      transition: background .2s, color .2s;
     }
 
     .modal-close:hover {
@@ -971,7 +932,7 @@
       border-radius: 50px;
       font-size: 15px;
       font-weight: 700;
-      cursor: none;
+      cursor: pointer;
       transition: background .2s, transform .15s;
     }
 
@@ -1143,13 +1104,11 @@
         font-size: 28px;
       }
 
-      .cursor,
-      .cursor-ring {
-        display: none;
-      }
 
-      body {
-        cursor: auto;
+      .btn-primary,
+      .btn-secondary {
+        padding: 8px 18px;
+        font-size: 13px;
       }
     }
 
@@ -1192,6 +1151,8 @@
       .btn-primary,
       .btn-secondary {
         width: 100%;
+        padding: 7px 14px;
+        font-size: 12px;
         text-align: center;
         justify-content: center;
       }
@@ -1212,10 +1173,6 @@
 </head>
 
 <body>
-
-  <!-- Custom Cursor -->
-  <div class="cursor" id="cursor"></div>
-  <div class="cursor-ring" id="cursorRing"></div>
 
   <!-- Modal -->
 
@@ -1396,19 +1353,6 @@
   <script src="js/supabase-config.js"></script>
 
   <script>
-    const cursor = document.getElementById('cursor');
-    const cursorRing = document.getElementById('cursorRing');
-    let mx = 0, my = 0, rx = 0, ry = 0;
-    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-    (function animate() {
-      cursor.style.left = mx + 'px';
-      cursor.style.top = my + 'px';
-      rx += (mx - rx) * .12;
-      ry += (my - ry) * .12;
-      cursorRing.style.left = rx + 'px';
-      cursorRing.style.top = ry + 'px';
-      requestAnimationFrame(animate);
-    })();
 
     /* ── TESTIMONIALS FROM SUPABASE ─────────────────────────── */
     let postsData = [];

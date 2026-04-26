@@ -63,7 +63,7 @@
       font-size: 14px;
       font-weight: 600;
       color: rgba(255, 255, 255, .5);
-      cursor: none;
+      cursor: pointer;
       transition: background .2s, border-color .2s, color .2s;
       font-family: var(--font);
     }
@@ -120,7 +120,7 @@
       border-radius: var(--radius-card);
       padding: 30px 32px;
       position: relative;
-      cursor: none;
+      cursor: pointer;
       transition: border-color .3s, transform .3s, background .3s;
       overflow: hidden;
     }
@@ -223,7 +223,7 @@
       font-size: 12px;
       font-weight: 600;
       color: rgba(255, 255, 255, .5);
-      cursor: none;
+      cursor: pointer;
       transition: background .2s, color .2s, border-color .2s;
       font-family: var(--font);
       display: flex;
@@ -316,7 +316,7 @@
       border-radius: 50%;
       background: var(--purple-light);
       border: none;
-      cursor: none;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -423,7 +423,7 @@
       font-size: 15px;
       font-weight: 600;
       color: var(--white);
-      cursor: none;
+      cursor: pointer;
       transition: background .2s;
       font-family: var(--font);
     }
@@ -440,7 +440,7 @@
       font-size: 15px;
       font-weight: 700;
       color: #ff8080;
-      cursor: none;
+      cursor: pointer;
       transition: background .2s;
       font-family: var(--font);
     }
@@ -594,9 +594,6 @@
 
 <body>
 
-  <div class="cursor" id="cursor"></div>
-  <div class="cursor-ring" id="cursorRing"></div>
-
   <!-- Delete Confirm Modal -->
   <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-modal">
@@ -683,12 +680,6 @@
   <script src="js/supabase-config.js"></script>
 
   <script>
-    /* ── CURSOR ───────────────────────────── */
-    const cursor = document.getElementById('cursor'), ring = document.getElementById('cursorRing');
-    let mx = 0, my = 0, rx = 0, ry = 0;
-    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-    (function t() { cursor.style.cssText += `left:${mx}px;top:${my}px;`; rx += (mx - rx) * .12; ry += (my - ry) * .12; ring.style.cssText += `left:${rx}px;top:${ry}px;`; requestAnimationFrame(t); })();
-
     /* ── REVEAL ──────────────────────────── */
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }), { threshold: .08 });
     document.querySelectorAll('.reveal').forEach(el => { io.observe(el); setTimeout(() => el.classList.add('visible'), 250); });
