@@ -1445,6 +1445,45 @@
     // Charger les posts quand le DOM est prêt
     document.addEventListener('DOMContentLoaded', () => {
       loadPosts();
+      // S'abonner aux nouveaux posts en temps réel
+      MiaDarling.RealtimeAPI.subscribeToPosts((newPost) => {
+        console.log('Nouveau post reçu en temps réel:', newPost);
+        // Ajouter le nouveau post au début du tableau
+        postsData.unshift(newPost);
+        // Recharger l'affichage
+        const track = document.getElementById('cardsTrack');
+        if (track && postsData.length > 0) {
+          track.innerHTML = '';
+          const allPosts = [...postsData, ...postsData];
+          allPosts.forEach((post, i) => {
+            const card = document.createElement('div');
+            card.className = 'testimonial-card';
+            card.style.cursor = 'pointer';
+            card.dataset.postId = post.id;
+            card.addEventListener('click', (e) => {
+              if (!e.target.classList.contains('card-heart')) {
+                if (post.id) {
+                  sessionStorage.setItem('viewPostId', post.id);
+                  window.location.href = 'post.html';
+                }
+              }
+            });
+            const tagsHtml = post.tags.length > 0
+              ? post.tags.map(t => `<span style="margin-left:8px;font-size:11px;color:rgba(166,108,255,.7);">#${t.name}</span>`).join('')
+              : '';
+            card.innerHTML = `
+              <p class="card-quote">"${post.content}"</p>
+              <div class="card-meta">
+                <span class="card-dot"></span>
+                ${post.authorName} · ${post.timeAgo}
+                ${tagsHtml}
+                <span class="card-heart" data-post-id="${post.id}" data-likes="${post.reactionsCount}">♡ ${post.reactionsCount}</span>
+              </div>`;
+            track.appendChild(card);
+          });
+          attachReactionHandlers();
+        }
+      });
     });
     // Aussi charger immédiatement si le DOM est déjà prêt
     if (document.readyState !== 'loading') {

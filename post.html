@@ -837,8 +837,71 @@
         // Charger les commentaires
         await loadComments();
 
+        // S'abonner aux mises à jour en temps réel
+        MiaDarling.RealtimeAPI.subscribeToComments(currentPostId, (data) => {
+          if (data.type === 'delete') {
+            // Supprimer le commentaire du DOM
+            const commentEl = document.querySelector(`.comment[data-id="${data.commentId}"]`);
+            if (commentEl) commentEl.remove();
+            updateCommentsCount(-1);
+          } else if (data.type === 'update') {
+            // Mettre à jour le commentaire
+            const commentEl = document.querySelector(`.comment[data-id="${data.comment.id}"]`);
+            if (commentEl) {
+              commentEl.querySelector('.comment-text').textContent = data.comment.content;
+            }
+          } else {
+            // Nouveau commentaire
+            addCommentToDOM(data);
+            updateCommentsCount(1);
+          }
+        });
+
+        MiaDarling.RealtimeAPI.subscribeToReactions(currentPostId, (reactions) => {
+          // Mettre à jour l'affichage des réactions
+          reactions.forEach(r => {
+            const btn = document.querySelector(`.reaction-btn[data-type="${r.name}"]`);
+            if (btn) {
+              btn.querySelector('.reaction-count').textContent = r.count.toLocaleString('fr-FR');
+            }
+          });
+        });
+
       } catch (error) {
         console.error('Erreur chargement post:', error);
+      }
+    }
+
+    /* ── REALTIME HELPERS ─────────────────────────────── */
+    function addCommentToDOM(comment) {
+      const container = document.getElementById('commentsContainer');
+      const noComments = container.querySelector('.no-comments');
+      if (noComments) noComments.remove();
+
+      const commentEl = document.createElement('div');
+      commentEl.className = 'comment';
+      commentEl.dataset.id = comment.id;
+      commentEl.innerHTML = `
+        <div class="comment-header">
+          <span class="comment-author">${comment.authorName}</span>
+          <span class="comment-time">${comment.timeAgo}</span>
+        </div>
+        <p class="comment-text">${comment.content}</p>
+        <div class="comment-actions">
+          <button class="comment-like-btn" onclick="toggleCommentLike(${comment.id})">
+            ♡ ${comment.likesCount}
+          </button>
+          ${comment.isOwn ? `<button class="comment-delete-btn" onclick="deleteComment(${comment.id})">Supprimer</button>` : ''}
+        </div>
+      `;
+      container.insertBefore(commentEl, container.firstChild);
+    }
+
+    function updateCommentsCount(delta) {
+      const countEl = document.querySelector('.comments-count');
+      if (countEl) {
+        const current = parseInt(countEl.textContent) || 0;
+        countEl.textContent = Math.max(0, current + delta);
       }
     }
 

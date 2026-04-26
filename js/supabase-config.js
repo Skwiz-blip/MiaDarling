@@ -936,6 +936,154 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('Mia Darling - Session initialisée');
 });
 
+// =====================================================
+// REALTIME
+// =====================================================
+
+const RealtimeAPI = {
+    subscriptions: {},
+
+    /**
+     * S'abonner aux nouveaux posts
+     */
+    subscribeToPosts(callback) {
+        const channel = supabaseClient
+            .channel('public-posts')
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'posts',
+                filter: 'status=eq.published'
+            }, async (payload) => {
+                console.log('Nouveau post:', payload.new);
+                const post = await PostsAPI.getById(payload.new.id);
+                if (post && callback) callback(post);
+            })
+            .subscribe();
+
+        this.subscriptions.posts = channel;
+        return channel;
+    },
+
+    /**
+     * S'abonner aux commentaires d'un post
+     */
+    subscribeToComments(postId, callback) {
+        const channel = supabaseClient
+            .channel(`post-comments-${postId}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'comments',
+                filter: `post_id=eq.${postId}`
+            }, async (payload) => {
+                console.log('Nouveau commentaire:', payload.new);
+                if (payload.new.status === 'visible' && callback) {
+                    const comment = CommentsAPI.formatComment(payload.new);
+                    callback(comment);
+                }
+            })
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'comments',
+                filter: `post_id=eq.${postId}`
+            }, (payload) => {
+                console.log('Commentaire mis à jour:', payload.new);
+                if (callback) callback({ type: 'update', comment: CommentsAPI.formatComment(payload.new) });
+            })
+            .on('postgres_changes', {
+                event: 'DELETE',
+                schema: 'public',
+                table: 'comments',
+                filter: `post_id=eq.${postId}`
+            }, (payload) => {
+                console.log('Commentaire supprimé:', payload.old);
+                if (callback) callback({ type: 'delete', commentId: payload.old.id });
+            })
+            .subscribe();
+
+        this.subscriptions[`comments-${postId}`] = channel;
+        return channel;
+    },
+
+    /**
+     * S'abonner aux réactions d'un post
+     */
+    subscribeToReactions(postId, callback) {
+        const channel = supabaseClient
+            .channel(`post-reactions-${postId}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'post_reactions',
+                filter: `post_id=eq.${postId}`
+            }, async () => {
+                console.log('Nouvelle réaction');
+                const reactions = await ReactionsAPI.getForPost(postId);
+                if (callback) callback(reactions);
+            })
+            .on('postgres_changes', {
+                event: 'DELETE',
+                schema: 'public',
+                table: 'post_reactions',
+                filter: `post_id=eq.${postId}`
+            }, async () => {
+                console.log('Réaction supprimée');
+                const reactions = await ReactionsAPI.getForPost(postId);
+                if (callback) callback(reactions);
+            })
+            .subscribe();
+
+        this.subscriptions[`reactions-${postId}`] = channel;
+        return channel;
+    },
+
+    /**
+     * S'abonner aux changements de posts de l'utilisateur
+     */
+    subscribeToUserPosts(callback) {
+        const sessionToken = SessionManager.getToken();
+        if (!sessionToken) return null;
+
+        const channel = supabaseClient
+            .channel('user-posts')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'posts',
+                filter: `session_token=eq.${sessionToken}`
+            }, (payload) => {
+                console.log('Changement sur mes posts:', payload.eventType, payload.new || payload.old);
+                if (callback) callback({ event: payload.eventType, data: payload.new || payload.old });
+            })
+            .subscribe();
+
+        this.subscriptions['user-posts'] = channel;
+        return channel;
+    },
+
+    /**
+     * Se désabonner d'un canal
+     */
+    unsubscribe(key) {
+        if (this.subscriptions[key]) {
+            supabaseClient.removeChannel(this.subscriptions[key]);
+            delete this.subscriptions[key];
+        }
+    },
+
+    /**
+     * Se désabonner de tous les canaux
+     */
+    unsubscribeAll() {
+        Object.keys(this.subscriptions).forEach(key => {
+            supabaseClient.removeChannel(this.subscriptions[key]);
+        });
+        this.subscriptions = {};
+    }
+};
+
 // Exporter les APIs immédiatement
 window.MiaDarling = {
     SessionManager,
@@ -946,6 +1094,7 @@ window.MiaDarling = {
     StatsAPI,
     MoodsAPI,
     TagsAPI,
+    RealtimeAPI,
     getSupabase: () => supabaseClient
 };
 

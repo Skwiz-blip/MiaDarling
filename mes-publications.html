@@ -793,6 +793,13 @@
       document.querySelector('.stat-chip:nth-child(3) .stat-chip-num').textContent = stats.viewsCount.toLocaleString('fr-FR');
 
       applyFilterAndRender();
+
+      // S'abonner aux changements en temps réel
+      MiaDarling.RealtimeAPI.subscribeToUserPosts(({ event, data }) => {
+        console.log('Changement sur mes publications:', event, data);
+        // Recharger les publications
+        loadPublications();
+      });
     }
 
     function applyFilterAndRender() {
