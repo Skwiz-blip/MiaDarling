@@ -1172,26 +1172,7 @@
   <div class="cursor-ring" id="cursorRing"></div>
 
   <!-- Modal -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <button class="modal-close" id="modalClose">✕</button>
-      <h2>Exprimez-<span>vous</span></h2>
-      <p class="modal-hint">Partagez ce que vous ressentez. Sans nom, sans jugement. Votre message sera publié de façon
-        totalement anonyme.</p>
-      <textarea id="confessionText" placeholder="Écrivez librement… Tout ce que vous n'osez dire à personne."
-        maxlength="300"></textarea>
-      <div class="char-count"><span id="charCount">0</span> / 300</div>
-      <div class="modal-footer">
-        <div class="anon-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-          Anonyme & sécurisé
-        </div>
-        <button class="btn-send" id="btnSend">Publier ✦</button>
-      </div>
-    </div>
-  </div>
+  
 
   <!-- NAV -->
   <nav>
@@ -1334,9 +1315,7 @@
         <span class="stat-num" data-target="100">0</span>
         <span class="stat-label">% anonyme</span>
       </div>
-    </div>
-
-    <button class="btn-primary open-modal reveal reveal-delay-3">Exprimer vous ✦</button>
+    </div> 
   </section>
 
   <!-- ─── FOOTER ─────────────────────────────────────────────────── -->
@@ -1347,7 +1326,7 @@
       <a href="#">Modération</a>
       <a href="#">Contact</a>
     </div>
-    <p class="footer-copy">© 2025 Mia Darling — Toutes identités protégées.</p>
+    <p class="footer-copy">© 2026 Mia Darling — Toutes identités protégées.</p>
   </footer>
 
   <!-- Supabase SDK -->
@@ -1355,8 +1334,7 @@
   <!-- Configuration Supabase -->
   <script src="js/supabase-config.js"></script>
 
-  <script>
-    /* ── CURSOR ───────────────────────────────────────────── */
+  <script> 
     const cursor = document.getElementById('cursor');
     const cursorRing = document.getElementById('cursorRing');
     let mx = 0, my = 0, rx = 0, ry = 0;
@@ -1417,9 +1395,7 @@
               <span class="card-heart" data-post-id="${post.id}" data-likes="${post.reactionsCount}">♡ ${post.reactionsCount}</span>
             </div>`;
           track.appendChild(card);
-        });
-
-        // Attacher les événements de réaction
+        }); 
         attachReactionHandlers();
 
       } catch (error) {
@@ -1447,19 +1423,15 @@
           }
         });
       });
-    }
-
-    // Charger les posts au démarrage
+    } 
     loadPosts();
-
-    /* ── REVEAL ON SCROLL ─────────────────────────────────── */
+ 
     const revealEls = document.querySelectorAll('.reveal');
     const io = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
     }, { threshold: .12 });
     revealEls.forEach(el => io.observe(el));
-
-    /* ── COUNTER ANIMATION & REAL STATS ───────────────────── */
+ 
     const statNums = document.querySelectorAll('.stat-num[data-target]');
     const statIO = new IntersectionObserver(async (entries) => {
       entries.forEach(async (e) => {
@@ -1490,9 +1462,7 @@
         statIO.unobserve(el);
       });
     }, { threshold: .5 });
-    statNums.forEach(el => statIO.observe(el));
-
-    /* ── MODAL ────────────────────────────────────────────── */
+    statNums.forEach(el => statIO.observe(el)); 
     const overlay = document.getElementById('modalOverlay');
     const modalClose = document.getElementById('modalClose');
     const textArea = document.getElementById('confessionText');
@@ -1530,7 +1500,6 @@
       }
     });
 
-    /* ── NAV ACTIVE ON SCROLL ─────────────────────────────── */
     window.addEventListener('scroll', () => {
       const links = document.querySelectorAll('.nav-links a');
       const y = window.scrollY;
@@ -1540,7 +1509,6 @@
       else links[2].classList.add('active');
     });
 
-    /* ── HERO REVEAL ──────────────────────────────────────── */
     window.addEventListener('load', () => {
       document.querySelectorAll('.hero .reveal').forEach((el, i) => {
         setTimeout(() => el.classList.add('visible'), 200 + i * 150);
@@ -1549,4 +1517,23 @@
   </script>
 </body>
 
-</html>
+</html><div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">✕</button>
+      <h2>Exprimez-<span>vous</span></h2>
+      <p class="modal-hint">Partagez ce que vous ressentez. Sans nom, sans jugement. Votre message sera publié de façon
+        totalement anonyme.</p>
+      <textarea id="confessionText" placeholder="Écrivez librement… Tout ce que vous n'osez dire à personne."
+        maxlength="300"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 300</div>
+      <div class="modal-footer">
+        <div class="anon-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          Anonyme & sécurisé
+        </div>
+        <button class="btn-send" id="btnSend">Publier ✦</button>
+      </div>
+    </div>
+  </div>
