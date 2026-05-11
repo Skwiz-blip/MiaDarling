@@ -79,7 +79,8 @@ const SessionManager = {
     getToken() {
         return localStorage.getItem(this.STORAGE_KEY);
     },
-    async getSessionInfo() {
+
+    async getSession() {
         const token = this.getToken();
         if (!token) return null;
 
@@ -91,85 +92,9 @@ const SessionManager = {
 
         return error ? null : data;
     },
-    async getRecoveryCode() {
-        const token = this.getToken();
-        if (!token) return null;
 
-        const { data, error } = await supabaseClient
-            .from('anonymous_sessions')
-            .select('recovery_code')
-            .eq('session_token', token)
-            .single();
-
-        return error ? null : data?.recovery_code;
-    },
-
-    async recoverAccount(recoveryCode) {
-        const cleanCode = recoveryCode.toUpperCase().trim();
-
-        const { data, error } = await supabaseClient
-            .from('anonymous_sessions')
-            .select('session_token, anonymous_name')
-            .eq('recovery_code', cleanCode)
-            .single();
-
-        if (error || !data) {
-            return { success: false, error: 'Code de récupération invalide' };
-        }
-
-        // Sauvegarder le token dans localStorage
-        localStorage.setItem(this.STORAGE_KEY, data.session_token);
-
-        return {
-            success: true,
-            sessionToken: data.session_token,
-            anonymousName: data.anonymous_name
-        };
-    },
-
-    /**
-     * Ajoute un email de récupération optionnel
-     */
-    async setRecoveryEmail(email) {
-        const token = this.getToken();
-        if (!token) return { success: false, error: 'Pas de session active' };
-
-        const { error } = await supabaseClient
-            .from('anonymous_sessions')
-            .update({
-                recovery_email: email.toLowerCase().trim(),
-                recovery_email_verified: false
-            })
-            .eq('session_token', token);
-
-        return { success: !error, error: error?.message };
-    },
-
-    /**
-     * Récupère un compte via un email
-     */
-    async recoverByEmail(email) {
-        const cleanEmail = email.toLowerCase().trim();
-
-        const { data, error } = await supabaseClient
-            .from('anonymous_sessions')
-            .select('session_token, anonymous_name, recovery_code')
-            .eq('recovery_email', cleanEmail)
-            .single();
-
-        if (error || !data) {
-            return { success: false, error: 'Email non trouvé' };
-        }
-
-        // Sauvegarder le token dans localStorage
-        localStorage.setItem(this.STORAGE_KEY, data.session_token);
-
-        return {
-            success: true,
-            sessionToken: data.session_token,
-            anonymousName: data.anonymous_name,
-            recoveryCode: data.recovery_code
-        };
+    async getSessionInfo() {
+        return this.getSession();
     }
 };
 
@@ -177,11 +102,7 @@ const PostsAPI = {
     async getRecent(limit = 20, offset = 0) {
         const { data, error } = await supabaseClient
             .from('posts')
-            .select(`
-                *,
-                post_moods (moods (id, name, emoji)),
-                post_tags (tags (id, name, slug))
-            `)
+            .select('*')
             .eq('status', 'published')
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
@@ -191,17 +112,15 @@ const PostsAPI = {
             return [];
         }
 
-        return this.formatPosts(data);
+        // Récupérer les noms anonymes
+        const posts = await this.enrichWithAnonymousNames(data);
+        return posts;
     },
 
     async getPopular(limit = 20) {
         const { data, error } = await supabaseClient
             .from('posts')
-            .select(`
-                *,
-                post_moods (moods (id, name, emoji)),
-                post_tags (tags (id, name, slug))
-            `)
+            .select('*')
             .eq('status', 'published')
             .order('reactions_count', { ascending: false })
             .order('views_count', { ascending: false })
@@ -212,58 +131,14 @@ const PostsAPI = {
             return [];
         }
 
-        return this.formatPosts(data);
-    },
-
-    /**
-     * Récupère les posts tendance (mélange fraîcheur + popularité)
-     * Score = (réactions * 3 + vues) / (heures depuis publication + 2)^1.5
-     */
-    async getTrending(limit = 20) {
-        // Utiliser getRecent puis trier côté client
-        const { data, error } = await supabaseClient
-            .from('posts')
-            .select(`
-                id,
-                content,
-                created_at,
-                views_count,
-                reactions_count,
-                status,
-                post_moods (moods (id, name, emoji)),
-                post_tags (tags (id, name, slug))
-            `)
-            .eq('status', 'published')
-            .order('created_at', { ascending: false })
-            .limit(50);
-
-        if (error) {
-            console.error('Erreur récupération posts tendance:', error);
-            // Fallback vers getRecent simple
-            return this.getRecent(limit);
-        }
-
-        const now = new Date();
-        const scored = data.map(post => {
-            const hoursSincePost = (now - new Date(post.created_at)) / (1000 * 60 * 60);
-            const reactions = post.reactions_count || 0;
-            const views = post.views_count || 0;
-            const score = (reactions * 3 + views) / Math.pow(hoursSincePost + 2, 1.5);
-            return { ...post, trendingScore: score };
-        });
-
-        scored.sort((a, b) => b.trendingScore - a.trendingScore);
-        return this.formatPosts(scored.slice(0, limit));
+        const posts = await this.enrichWithAnonymousNames(data);
+        return posts;
     },
 
     async getById(postId) {
         const { data, error } = await supabaseClient
             .from('posts')
-            .select(`
-                *,
-                post_moods (moods (id, name, emoji)),
-                post_tags (tags (id, name, slug))
-            `)
+            .select('*')
             .eq('id', postId)
             .single();
 
@@ -272,7 +147,34 @@ const PostsAPI = {
             return null;
         }
 
-        return this.formatPost(data);
+        const posts = await this.enrichWithAnonymousNames([data]);
+        return posts[0];
+    },
+
+    async enrichWithAnonymousNames(posts) {
+        if (!posts || posts.length === 0) return [];
+
+        // Extraire les session_tokens uniques
+        const tokens = [...new Set(posts.map(p => p.session_token).filter(Boolean))];
+
+        if (tokens.length === 0) {
+            return posts.map(p => this.formatPost(p, 'Anonyme'));
+        }
+
+        // Récupérer les sessions correspondantes
+        const { data: sessions } = await supabaseClient
+            .from('anonymous_sessions')
+            .select('session_token, anonymous_name')
+            .in('session_token', tokens);
+
+        // Créer un map token -> name
+        const nameMap = {};
+        (sessions || []).forEach(s => {
+            nameMap[s.session_token] = s.anonymous_name;
+        });
+
+        // Formater les posts avec les noms
+        return posts.map(p => this.formatPost(p, nameMap[p.session_token] || 'Anonyme'));
     },
 
     async getMyPosts() {
@@ -281,11 +183,7 @@ const PostsAPI = {
 
         const { data, error } = await supabaseClient
             .from('posts')
-            .select(`
-                *,
-                post_moods (moods (id, name, emoji)),
-                post_tags (tags (id, name, slug))
-            `)
+            .select('*')
             .eq('session_token', sessionToken)
             .neq('status', 'deleted')
             .order('created_at', { ascending: false });
@@ -384,36 +282,28 @@ const PostsAPI = {
      * Enregistre une vue
      */
     async recordView(postId) {
-        try {
-            const sessionToken = SessionManager.getToken();
-            if (!sessionToken) {
-                await SessionManager.getOrCreateSession();
-            }
+        const sessionToken = SessionManager.getToken();
+        if (!sessionToken) {
+            await SessionManager.getOrCreateSession();
+        }
 
-            // Vérifier si déjà vu par cette session
-            const { data: existing } = await supabaseClient
-                .from('post_views')
-                .select('id')
-                .eq('post_id', postId)
-                .eq('session_token', SessionManager.getToken())
-                .maybeSingle();
+        // Vérifier si déjà vu par cette session
+        const { data: existing } = await supabaseClient
+            .from('post_views')
+            .select('id')
+            .eq('post_id', postId)
+            .eq('session_token', SessionManager.getToken())
+            .single();
 
-            if (!existing) {
-                // Enregistrer la vue
-                await supabaseClient.from('post_views').insert({
-                    post_id: postId,
-                    session_token: SessionManager.getToken()
-                });
+        if (!existing) {
+            // Enregistrer la vue
+            await supabaseClient.from('post_views').insert({
+                post_id: postId,
+                session_token: SessionManager.getToken()
+            });
 
-                // Incrémenter le compteur de vues via RPC (ignore erreur si fonction n'existe pas)
-                try {
-                    await supabaseClient.rpc('increment_view_count', { post_id: postId });
-                } catch (rpcError) {
-                    console.warn('RPC increment_view_count non disponible:', rpcError.message);
-                }
-            }
-        } catch (error) {
-            console.warn('Erreur enregistrement vue (non bloquante):', error.message);
+            // Incrémenter le compteur de vues
+            await supabaseClient.rpc('increment_view_count', { post_id: postId });
         }
     },
 
@@ -453,19 +343,19 @@ const PostsAPI = {
     /**
      * Formate un post
      */
-    formatPost(post) {
+    formatPost(post, anonymousName = 'Anonyme') {
         return {
             id: post.id,
             content: post.content,
-            authorName: 'Anonyme',
+            authorName: anonymousName,
             createdAt: post.created_at,
             timeAgo: this.timeAgo(post.created_at),
             isEdited: post.is_edited,
             viewsCount: post.views_count || 0,
             commentsCount: post.comments_count || 0,
             reactionsCount: post.reactions_count || 0,
-            moods: post.post_moods?.map(pm => pm.moods) || [],
-            tags: post.post_tags?.map(pt => pt.tags) || []
+            moods: [],
+            tags: []
         };
     },
 
@@ -525,13 +415,13 @@ const ReactionsAPI = {
         }
 
         // Vérifier si l'utilisateur a déjà réagi
-        const { data: existing } = await supabaseClient
+        const { data: existing, error: queryError } = await supabaseClient
             .from('post_reactions')
             .select('*')
             .eq('post_id', postId)
             .eq('reaction_type_id', reactionTypeId)
             .eq('session_token', SessionManager.getToken())
-            .single();
+            .maybeSingle();
 
         if (existing) {
             // Retirer la réaction
@@ -582,9 +472,7 @@ const CommentsAPI = {
     async getForPost(postId) {
         const { data, error } = await supabaseClient
             .from('comments')
-            .select(`
-                *
-            `)
+            .select('*')
             .eq('post_id', postId)
             .eq('status', 'visible')
             .order('created_at', { ascending: true });
@@ -594,7 +482,34 @@ const CommentsAPI = {
             return [];
         }
 
-        return this.formatComments(data);
+        const comments = await this.enrichWithAnonymousNames(data);
+        return comments;
+    },
+
+    async enrichWithAnonymousNames(comments) {
+        if (!comments || comments.length === 0) return [];
+
+        // Extraire les session_tokens uniques
+        const tokens = [...new Set(comments.map(c => c.session_token).filter(Boolean))];
+
+        if (tokens.length === 0) {
+            return comments.map(c => this.formatComment(c, 'Anonyme'));
+        }
+
+        // Récupérer les sessions correspondantes
+        const { data: sessions } = await supabaseClient
+            .from('anonymous_sessions')
+            .select('session_token, anonymous_name')
+            .in('session_token', tokens);
+
+        // Créer un map token -> name
+        const nameMap = {};
+        (sessions || []).forEach(s => {
+            nameMap[s.session_token] = s.anonymous_name;
+        });
+
+        // Formater les commentaires avec les noms
+        return comments.map(c => this.formatComment(c, nameMap[c.session_token] || 'Anonyme'));
     },
 
     /**
@@ -622,7 +537,10 @@ const CommentsAPI = {
             return null;
         }
 
-        return this.formatComment(data);
+        // Récupérer le nom de la session actuelle
+        const session = await SessionManager.getSession();
+        const anonymousName = session?.anonymous_name || 'Anonyme';
+        return this.formatComment(data, anonymousName);
     },
 
     /**
@@ -686,14 +604,14 @@ const CommentsAPI = {
     /**
      * Formate un commentaire
      */
-    formatComment(comment) {
+    formatComment(comment, anonymousName = 'Anonyme') {
         const sessionToken = SessionManager.getToken();
 
         return {
             id: comment.id,
             postId: comment.post_id,
             parentId: comment.parent_comment_id,
-            authorName: 'Anonyme',
+            authorName: anonymousName,
             content: comment.content,
             createdAt: comment.created_at,
             timeAgo: PostsAPI.timeAgo(comment.created_at),
@@ -923,6 +841,345 @@ const TagsAPI = {
 };
 
 // =====================================================
+// GROUPS
+// =====================================================
+
+const GroupsAPI = {
+    /**
+     * Récupère tous les groupes actifs
+     */
+    async getAll() {
+        const { data, error } = await supabaseClient
+            .from('groups')
+            .select('*')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Erreur récupération groupes:', error);
+            return [];
+        }
+
+        // Formater les données pour le frontend
+        return data.map(g => ({
+            id: g.id,
+            name: g.name,
+            description: g.description,
+            membersCount: g.members_count || 0,
+            messagesCount: g.messages_count || 0,
+            createdAt: g.created_at,
+            status: g.status
+        }));
+    },
+
+    /**
+     * Récupère un groupe par ID
+     */
+    async getById(groupId) {
+        const { data, error } = await supabaseClient
+            .from('groups')
+            .select('*')
+            .eq('id', groupId)
+            .single();
+
+        if (error) {
+            console.error('Erreur récupération groupe:', error);
+            return null;
+        }
+
+        // Formater les données pour le frontend
+        return {
+            id: data.id,
+            name: data.name,
+            description: data.description,
+            membersCount: data.members_count || 0,
+            messagesCount: data.messages_count || 0,
+            createdAt: data.created_at,
+            status: data.status
+        };
+    },
+
+    /**
+     * Crée un nouveau groupe (admin back-office uniquement)
+     */
+    async create(name, description = '') {
+        // Vérifier que l'utilisateur est admin
+        const isAdmin = await this.isAdmin();
+        if (!isAdmin) {
+            console.error('Seul un admin back-office peut créer des groupes');
+            return null;
+        }
+
+        const sessionToken = SessionManager.getToken();
+        if (!sessionToken) return null;
+
+        const { data, error } = await supabaseClient
+            .from('groups')
+            .insert({
+                name: name,
+                description: description,
+                created_by: sessionToken
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Erreur création groupe:', error);
+            return null;
+        }
+
+        return data;
+    },
+
+    /**
+     * Rejoint un groupe
+     */
+    async join(groupId) {
+        const sessionToken = SessionManager.getToken();
+        if (!sessionToken) return false;
+
+        // Vérifier si déjà membre
+        const { data: existing } = await supabaseClient
+            .from('group_members')
+            .select('*')
+            .eq('group_id', groupId)
+            .eq('session_token', sessionToken)
+            .maybeSingle();
+
+        if (existing) return true;
+
+        // Ajouter comme membre
+        const { error } = await supabaseClient
+            .from('group_members')
+            .insert({
+                group_id: groupId,
+                session_token: sessionToken
+            });
+
+        return !error;
+    },
+
+    /**
+     * Quitte un groupe
+     */
+    async leave(groupId) {
+        const sessionToken = SessionManager.getToken();
+        if (!sessionToken) return false;
+
+        const { error } = await supabaseClient
+            .from('group_members')
+            .delete()
+            .eq('group_id', groupId)
+            .eq('session_token', sessionToken);
+
+        return !error;
+    },
+
+    /**
+     * Récupère les messages d'un groupe
+     */
+    async getMessages(groupId, limit = 50) {
+        const { data, error } = await supabaseClient
+            .from('group_messages')
+            .select('*')
+            .eq('group_id', groupId)
+            .eq('status', 'visible')
+            .order('created_at', { ascending: true })
+            .limit(limit);
+
+        if (error) {
+            console.error('Erreur récupération messages:', error);
+            return [];
+        }
+
+        // Enrichir avec les noms d'auteurs
+        const enriched = await this.enrichWithAnonymousNames(data);
+
+        // Formater pour le frontend
+        return enriched.map(m => ({
+            id: m.id,
+            groupId: m.group_id,
+            content: m.content,
+            sessionToken: m.session_token,
+            authorName: m.authorName || 'Anonyme',
+            isAdminReply: m.is_admin_reply || false,
+            createdAt: m.created_at
+        }));
+    },
+
+    /**
+     * Envoie un message dans un groupe
+     */
+    async sendMessage(groupId, content) {
+        const sessionToken = SessionManager.getToken();
+        if (!sessionToken) return null;
+
+        const { data, error } = await supabaseClient
+            .from('group_messages')
+            .insert({
+                group_id: groupId,
+                session_token: sessionToken,
+                content: content
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Erreur envoi message:', error);
+            return null;
+        }
+
+        // Récupérer le nom de l'auteur
+        const session = await SessionManager.getSession();
+        return {
+            ...data,
+            authorName: session?.anonymous_name || 'Anonyme',
+            sessionToken: sessionToken
+        };
+    },
+
+    /**
+     * Récupère les membres d'un groupe
+     */
+    async getMembers(groupId) {
+        const { data: members, error } = await supabaseClient
+            .from('group_members')
+            .select('session_token, joined_at')
+            .eq('group_id', groupId)
+            .order('joined_at', { ascending: true });
+
+        if (error || !members) {
+            console.error('Erreur récupération membres:', error);
+            return [];
+        }
+
+        // Récupérer les noms anonymes
+        const tokens = members.map(m => m.session_token);
+        const { data: sessions } = await supabaseClient
+            .from('anonymous_sessions')
+            .select('session_token, anonymous_name')
+            .in('session_token', tokens);
+
+        const nameMap = {};
+        (sessions || []).forEach(s => {
+            nameMap[s.session_token] = s.anonymous_name;
+        });
+
+        return members.map(m => ({
+            sessionToken: m.session_token,
+            anonymousName: nameMap[m.session_token] || 'Anonyme',
+            joinedAt: m.joined_at
+        }));
+    },
+
+    /**
+     * Supprime un message (admin ou auteur)
+     */
+    async deleteMessage(messageId) {
+        const sessionToken = SessionManager.getToken();
+
+        const { error } = await supabaseClient
+            .from('group_messages')
+            .update({ status: 'deleted' })
+            .eq('id', messageId)
+            .eq('session_token', sessionToken);
+
+        return !error;
+    },
+
+    /**
+     * Enrichit les messages avec les noms anonymes
+     */
+    async enrichWithAnonymousNames(messages) {
+        if (!messages || messages.length === 0) return [];
+
+        const tokens = [...new Set(messages.map(m => m.session_token).filter(Boolean))];
+
+        if (tokens.length === 0) {
+            return messages.map(m => ({ ...m, authorName: 'Anonyme' }));
+        }
+
+        const { data: sessions } = await supabaseClient
+            .from('anonymous_sessions')
+            .select('session_token, anonymous_name')
+            .in('session_token', tokens);
+
+        const nameMap = {};
+        (sessions || []).forEach(s => {
+            nameMap[s.session_token] = s.anonymous_name;
+        });
+
+        return messages.map(m => ({
+            ...m,
+            authorName: nameMap[m.session_token] || 'Anonyme'
+        }));
+    },
+
+    /**
+     * Vérifie si l'utilisateur est admin back-office
+     */
+    async isAdmin() {
+        const sessionToken = SessionManager.getToken();
+        if (!sessionToken) return false;
+
+        const { data } = await supabaseClient
+            .from('admin_users')
+            .select('id')
+            .eq('session_token', sessionToken)
+            .eq('is_active', true)
+            .maybeSingle();
+
+        return !!data;
+    },
+
+    /**
+     * Admin: Supprime un groupe
+     */
+    async adminDeleteGroup(groupId) {
+        const isAdmin = await this.isAdmin();
+        if (!isAdmin) return false;
+
+        const { error } = await supabaseClient
+            .from('groups')
+            .update({ is_active: false })
+            .eq('id', groupId);
+
+        return !error;
+    },
+
+    /**
+     * Admin: Bannit un membre d'un groupe
+     */
+    async adminBanMember(groupId, sessionToken) {
+        const isAdmin = await this.isAdmin();
+        if (!isAdmin) return false;
+
+        const { error } = await supabaseClient
+            .from('group_members')
+            .delete()
+            .eq('group_id', groupId)
+            .eq('session_token', sessionToken);
+
+        return !error;
+    },
+
+    /**
+     * Admin: Supprime n'importe quel message
+     */
+    async adminDeleteMessage(messageId) {
+        const isAdmin = await this.isAdmin();
+        if (!isAdmin) return false;
+
+        const { error } = await supabaseClient
+            .from('group_messages')
+            .update({ status: 'deleted' })
+            .eq('id', messageId);
+
+        return !error;
+    }
+};
+
+// =====================================================
 // INITIALISATION
 // =====================================================
 
@@ -936,154 +1193,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('Mia Darling - Session initialisée');
 });
 
-// =====================================================
-// REALTIME
-// =====================================================
-
-const RealtimeAPI = {
-    subscriptions: {},
-
-    /**
-     * S'abonner aux nouveaux posts
-     */
-    subscribeToPosts(callback) {
-        const channel = supabaseClient
-            .channel('public-posts')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'posts',
-                filter: 'status=eq.published'
-            }, async (payload) => {
-                console.log('Nouveau post:', payload.new);
-                const post = await PostsAPI.getById(payload.new.id);
-                if (post && callback) callback(post);
-            })
-            .subscribe();
-
-        this.subscriptions.posts = channel;
-        return channel;
-    },
-
-    /**
-     * S'abonner aux commentaires d'un post
-     */
-    subscribeToComments(postId, callback) {
-        const channel = supabaseClient
-            .channel(`post-comments-${postId}`)
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'comments',
-                filter: `post_id=eq.${postId}`
-            }, async (payload) => {
-                console.log('Nouveau commentaire:', payload.new);
-                if (payload.new.status === 'visible' && callback) {
-                    const comment = CommentsAPI.formatComment(payload.new);
-                    callback(comment);
-                }
-            })
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'comments',
-                filter: `post_id=eq.${postId}`
-            }, (payload) => {
-                console.log('Commentaire mis à jour:', payload.new);
-                if (callback) callback({ type: 'update', comment: CommentsAPI.formatComment(payload.new) });
-            })
-            .on('postgres_changes', {
-                event: 'DELETE',
-                schema: 'public',
-                table: 'comments',
-                filter: `post_id=eq.${postId}`
-            }, (payload) => {
-                console.log('Commentaire supprimé:', payload.old);
-                if (callback) callback({ type: 'delete', commentId: payload.old.id });
-            })
-            .subscribe();
-
-        this.subscriptions[`comments-${postId}`] = channel;
-        return channel;
-    },
-
-    /**
-     * S'abonner aux réactions d'un post
-     */
-    subscribeToReactions(postId, callback) {
-        const channel = supabaseClient
-            .channel(`post-reactions-${postId}`)
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'post_reactions',
-                filter: `post_id=eq.${postId}`
-            }, async () => {
-                console.log('Nouvelle réaction');
-                const reactions = await ReactionsAPI.getForPost(postId);
-                if (callback) callback(reactions);
-            })
-            .on('postgres_changes', {
-                event: 'DELETE',
-                schema: 'public',
-                table: 'post_reactions',
-                filter: `post_id=eq.${postId}`
-            }, async () => {
-                console.log('Réaction supprimée');
-                const reactions = await ReactionsAPI.getForPost(postId);
-                if (callback) callback(reactions);
-            })
-            .subscribe();
-
-        this.subscriptions[`reactions-${postId}`] = channel;
-        return channel;
-    },
-
-    /**
-     * S'abonner aux changements de posts de l'utilisateur
-     */
-    subscribeToUserPosts(callback) {
-        const sessionToken = SessionManager.getToken();
-        if (!sessionToken) return null;
-
-        const channel = supabaseClient
-            .channel('user-posts')
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'posts',
-                filter: `session_token=eq.${sessionToken}`
-            }, (payload) => {
-                console.log('Changement sur mes posts:', payload.eventType, payload.new || payload.old);
-                if (callback) callback({ event: payload.eventType, data: payload.new || payload.old });
-            })
-            .subscribe();
-
-        this.subscriptions['user-posts'] = channel;
-        return channel;
-    },
-
-    /**
-     * Se désabonner d'un canal
-     */
-    unsubscribe(key) {
-        if (this.subscriptions[key]) {
-            supabaseClient.removeChannel(this.subscriptions[key]);
-            delete this.subscriptions[key];
-        }
-    },
-
-    /**
-     * Se désabonner de tous les canaux
-     */
-    unsubscribeAll() {
-        Object.keys(this.subscriptions).forEach(key => {
-            supabaseClient.removeChannel(this.subscriptions[key]);
-        });
-        this.subscriptions = {};
-    }
-};
-
 // Exporter les APIs immédiatement
 window.MiaDarling = {
     SessionManager,
@@ -1094,7 +1203,7 @@ window.MiaDarling = {
     StatsAPI,
     MoodsAPI,
     TagsAPI,
-    RealtimeAPI,
+    GroupsAPI,
     getSupabase: () => supabaseClient
 };
 
