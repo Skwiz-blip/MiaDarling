@@ -85,8 +85,7 @@ nav {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 0 20px rgba(166, 108, 255, 0.4);
+  object-fit: cover; 
 }
 
 .nav-logo-text {
@@ -159,8 +158,8 @@ nav {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  border: none;
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   display: flex;
@@ -170,8 +169,7 @@ nav {
 }
 
 .btn-logout:hover {
-  background: rgba(255, 80, 80, 0.15);
-  border-color: rgba(255, 80, 80, 0.3);
+  background: rgba(255, 80, 80, 0.15); 
   color: #ff6b6b;
 }
 

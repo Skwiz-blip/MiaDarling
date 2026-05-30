@@ -871,6 +871,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Configuration Supabase -->
   <script src="js/supabase-config.js"></script>
+  <script src="js/mobile-nav.js"></script>
 
   <script>
     /* ── CHECK SESSION ─────────────────────────────────────── */
@@ -880,7 +881,11 @@
         window.location.href = 'welcome.html';
         return;
       }
-      await MiaDarling.SessionManager.getOrCreateSession();
+      const result = await MiaDarling.SessionManager.getOrCreateSession();
+      if (result && result.session) {
+        const nameEl = document.getElementById('userName');
+        if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
+      }
     })();
 
     /* ── REVEAL ─────────────────────────────────── */

@@ -641,9 +641,9 @@ const DraftsAPI = {
                 draft_tags (tags (id, name, slug))
             `)
             .eq('session_token', sessionToken)
-            .single();
+            .maybeSingle();
 
-        if (error) return null;
+        if (error || !data) return null;
 
         return {
             id: data.id,
@@ -860,12 +860,21 @@ const GroupsAPI = {
             return [];
         }
 
+        // Compter les membres réels par groupe (la colonne members_count n'est pas maintenue)
+        const { data: memberRows } = await supabaseClient
+            .from('group_members')
+            .select('group_id');
+        const memberCounts = {};
+        (memberRows || []).forEach(r => {
+            memberCounts[r.group_id] = (memberCounts[r.group_id] || 0) + 1;
+        });
+
         // Formater les données pour le frontend
         return data.map(g => ({
             id: g.id,
             name: g.name,
             description: g.description,
-            membersCount: g.members_count || 0,
+            membersCount: memberCounts[g.id] ?? (g.members_count || 0),
             messagesCount: g.messages_count || 0,
             createdAt: g.created_at,
             status: g.status
@@ -887,12 +896,18 @@ const GroupsAPI = {
             return null;
         }
 
+        // Compter les membres réels (la colonne members_count n'est pas maintenue)
+        const { count: realMembersCount } = await supabaseClient
+            .from('group_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_id', groupId);
+
         // Formater les données pour le frontend
         return {
             id: data.id,
             name: data.name,
             description: data.description,
-            membersCount: data.members_count || 0,
+            membersCount: realMembersCount ?? (data.members_count || 0),
             messagesCount: data.messages_count || 0,
             createdAt: data.created_at,
             status: data.status

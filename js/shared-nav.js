@@ -35,9 +35,7 @@ const navStyles = `
 
   .nav-logo img {
     width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    box-shadow: 0 0 20px rgba(166, 108, 255, 0.4);
+    height: 42px; 
   }
 
   .nav-logo-text {
