@@ -20,16 +20,15 @@ if (!initSupabase()) {
 
 const SessionManager = {
     STORAGE_KEY: 'mia_darling_session',
-
-    async getOrCreateSession() {
+    async getOrCreateSession() { 
         let sessionToken = localStorage.getItem(this.STORAGE_KEY);
 
         if (sessionToken) {
-            const { data, error } = await supabaseClient
+            const { data } = await supabaseClient
                 .from('anonymous_sessions')
                 .select('*')
                 .eq('session_token', sessionToken)
-                .single();
+                .maybeSingle();
 
             if (data && !data.is_banned) {
                 await supabaseClient
@@ -39,27 +38,119 @@ const SessionManager = {
 
                 return { sessionToken, session: data };
             }
+            // Token périmé/banni : on repart de la connexion Google
+            localStorage.removeItem(this.STORAGE_KEY);
         }
 
+        // 2) Une session Supabase Auth (Google) est-elle active ?
+        const { data: { session: authSession } } = await supabaseClient.auth.getSession();
+        if (authSession && authSession.user) {
+            return await this.bindAuthUser(authSession.user);
+        }
+
+        // 3) Pas connecté → pas de session
+        return null;
+    },
+
+    /**
+     * Lie le compte Google à une identité anonyme (la retrouve ou la crée).
+     * L'email/nom réels sont stockés dans user_identities (table protégée),
+     * jamais dans anonymous_sessions qui reste public et 100% anonyme.
+     */
+    async bindAuthUser(authUser) {
+        // Identité déjà liée à ce compte Google ?
+        const { data: identity } = await supabaseClient
+            .from('user_identities')
+            .select('session_token')
+            .eq('auth_user_id', authUser.id)
+            .maybeSingle();
+
+        if (identity && identity.session_token) {
+            localStorage.setItem(this.STORAGE_KEY, identity.session_token);
+            const { data: sess } = await supabaseClient
+                .from('anonymous_sessions')
+                .select('*')
+                .eq('session_token', identity.session_token)
+                .maybeSingle();
+
+            if (sess && sess.is_banned) return { sessionToken: null, session: sess, banned: true };
+
+            await supabaseClient
+                .from('anonymous_sessions')
+                .update({ last_activity_at: new Date().toISOString() })
+                .eq('session_token', identity.session_token);
+
+            return { sessionToken: identity.session_token, session: sess };
+        }
+
+        // Première connexion : on crée l'identité anonyme + le lien privé
         const newToken = this.generateToken();
         const anonymousName = this.generateAnonymousName();
 
-        const { data, error } = await supabaseClient
+        const { data: sess, error: sessErr } = await supabaseClient
             .from('anonymous_sessions')
             .insert({
                 session_token: newToken,
-                anonymous_name: anonymousName
+                anonymous_name: anonymousName,
+                auth_user_id: authUser.id
             })
             .select()
             .single();
 
-        if (error) {
-            console.error('Erreur création session:', error);
+        if (sessErr) {
+            console.error('Erreur création session:', sessErr);
             return null;
         }
 
+        const meta = authUser.user_metadata || {};
+        const { error: idErr } = await supabaseClient
+            .from('user_identities')
+            .insert({
+                auth_user_id: authUser.id,
+                session_token: newToken,
+                real_email: authUser.email || null,
+                real_name: meta.full_name || meta.name || null,
+                avatar_url: meta.avatar_url || meta.picture || null
+            });
+
+        if (idErr) console.error('Erreur enregistrement identité:', idErr);
+
         localStorage.setItem(this.STORAGE_KEY, newToken);
-        return { sessionToken: newToken, session: data };
+        return { sessionToken: newToken, session: sess };
+    },
+
+    /**
+     * Démarre la connexion Google (OAuth Supabase).
+     * redirectTo = page de retour après Google (par défaut welcome.html).
+     */
+    async signInWithGoogle(redirectTo) {
+        return supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: redirectTo || (window.location.origin + '/welcome.html')
+            }
+        });
+    },
+
+    /**
+     * Déconnexion : ferme la session Google et oublie le token local.
+     */
+    async signOut() {
+        try { await supabaseClient.auth.signOut(); } catch (e) { /* noop */ }
+        localStorage.removeItem(this.STORAGE_KEY);
+        localStorage.removeItem('mia_darling_recovery');
+    },
+
+    /**
+     * Garde-fou de page : renvoie la session ou redirige vers welcome.html.
+     */
+    async requireSession() {
+        const result = await this.getOrCreateSession();
+        if (!result || !result.sessionToken) {
+            window.location.href = 'welcome.html';
+            return null;
+        }
+        return result;
     },
 
     generateToken() {
@@ -1198,14 +1289,15 @@ const GroupsAPI = {
 // INITIALISATION
 // =====================================================
 
-// Initialiser la session au chargement
-document.addEventListener('DOMContentLoaded', async () => {
-    // S'assurer que Supabase est initialisé
+// Initialiser uniquement le client au chargement.
+// La session n'est plus créée automatiquement : chaque page appelle
+// SessionManager.requireSession() (ou getOrCreateSession) elle-même, ce qui
+// évite de créer une identité avant la connexion Google.
+document.addEventListener('DOMContentLoaded', () => {
     if (!supabaseClient) {
         initSupabase();
     }
-    await SessionManager.getOrCreateSession();
-    console.log('Mia Darling - Session initialisée');
+    console.log('Mia Darling - Client initialisé');
 });
 
 // Exporter les APIs immédiatement

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Explorer — Mia Darling</title>
   <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -227,6 +227,36 @@
       .page-title {
         font-size: 28px;
       }
+      .filter-bar {
+        gap: 8px;
+      }
+      .filter-pill {
+        padding: 8px 16px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .recents-page {
+        padding: 72px 12px 60px;
+      }
+      .page-title {
+        font-size: 24px;
+      }
+      .page-subtitle {
+        font-size: 14px;
+      }
+      .filter-pill {
+        padding: 7px 14px;
+        font-size: 12px;
+      }
+      .post-card {
+        padding: 18px;
+        border-radius: 18px;
+      }
+      .post-content {
+        font-size: 14px;
+      }
     }
   </style>
 </head>
@@ -288,26 +318,20 @@
 
     // Check session
     (async function checkSession() {
-      const sessionToken = localStorage.getItem('mia_darling_session');
-      if (!sessionToken) {
+      const result = await MiaDarling.SessionManager.getOrCreateSession();
+      if (!result || !result.sessionToken) {
         window.location.href = 'welcome.html';
         return;
       }
-
-      const result = await MiaDarling.SessionManager.getOrCreateSession();
-      if (result && result.session) {
-        currentSession = result.session;
-        document.getElementById('userName').textContent = currentSession.anonymous_name || 'Anonyme';
-        loadPosts();
-      }
+      currentSession = result.session;
+      document.getElementById('userName').textContent = currentSession.anonymous_name || 'Anonyme';
+      loadPosts();
     })();
 
-    function logout() {
-      if (confirm('Se déconnecter ?')) {
-        localStorage.removeItem('mia_darling_session');
-        localStorage.removeItem('mia_darling_recovery');
-        window.location.href = 'welcome.html';
-      }
+    async function logout() {
+      if (!confirm('Se déconnecter ?')) return;
+      await MiaDarling.SessionManager.signOut();
+      window.location.href = 'welcome.html';
     }
 
     // Load posts

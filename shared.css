@@ -65,7 +65,8 @@ nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 48px;
+  padding-left: max(48px, env(safe-area-inset-left));
+  padding-right: max(48px, env(safe-area-inset-right));
   z-index: 1000;
 }
 
@@ -406,7 +407,8 @@ footer {
 
 @media (max-width: 960px) {
   nav {
-    padding: 0 24px;
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
     height: 72px;
   }
 
@@ -459,7 +461,8 @@ footer {
 
 @media (max-width: 768px) {
   nav {
-    padding: 0 16px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
     height: 64px;
   }
 
@@ -504,7 +507,8 @@ footer {
 
 @media (max-width: 480px) {
   nav {
-    padding: 0 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
     height: 56px;
   }
 

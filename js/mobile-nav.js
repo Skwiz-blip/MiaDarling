@@ -66,6 +66,8 @@
 
     .mnav-header {
       padding: 20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-left: max(20px, env(safe-area-inset-left));
       background: #000000;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
@@ -137,6 +139,8 @@
 
     .mnav-footer {
       padding: 16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      padding-left: max(16px, env(safe-area-inset-left));
       border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
     .mnav-logout {
@@ -185,12 +189,16 @@
     // (corrige aussi les boutons "Déconnexion" des pages qui appellent
     //  logout() sans l'avoir défini)
     if (typeof window.logout !== 'function') {
-      window.logout = function () {
-        if (confirm('Se déconnecter ?')) {
+      window.logout = async function () {
+        if (!confirm('Se déconnecter ?')) return;
+        // Ferme aussi la session Google si le module est chargé
+        if (window.MiaDarling && window.MiaDarling.SessionManager) {
+          await window.MiaDarling.SessionManager.signOut();
+        } else {
           localStorage.removeItem('mia_darling_session');
           localStorage.removeItem('mia_darling_recovery');
-          window.location.href = 'welcome.html';
         }
+        window.location.href = 'welcome.html';
       };
     }
 
@@ -250,10 +258,13 @@
     const open = () => {
       drawer.classList.add('active');
       overlay.classList.add('active');
+      // Empêche le défilement de la page en arrière-plan
+      document.body.style.overflow = 'hidden';
     };
     const close = () => {
       drawer.classList.remove('active');
       overlay.classList.remove('active');
+      document.body.style.overflow = '';
     };
 
     btn.addEventListener('click', open);

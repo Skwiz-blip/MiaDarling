@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Publier - Mia Darling</title>
   <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="apple-touch-icon" href="assets/logo.png" />
@@ -398,6 +398,7 @@
       left: 0;
       right: 0;
       padding: 18px 72px;
+      padding-bottom: max(18px, env(safe-area-inset-bottom));
       background: rgba(0, 0, 0, .9);
       backdrop-filter: blur(20px);
       border-top: 1px solid rgba(166, 108, 255, .12);
@@ -593,6 +594,7 @@
 
       .bottom-bar {
         padding: 14px 20px;
+        padding-bottom: max(14px, env(safe-area-inset-bottom));
       }
 
       .publish-btn {
@@ -640,6 +642,7 @@
 
       .bottom-bar {
         padding: 12px 16px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
         flex-wrap: wrap;
         gap: 10px;
       }
@@ -876,16 +879,13 @@
   <script>
     /* ── CHECK SESSION ─────────────────────────────────────── */
     (async function checkSession() {
-      const sessionToken = localStorage.getItem('mia_darling_session');
-      if (!sessionToken) {
+      const result = await MiaDarling.SessionManager.getOrCreateSession();
+      if (!result || !result.sessionToken) {
         window.location.href = 'welcome.html';
         return;
       }
-      const result = await MiaDarling.SessionManager.getOrCreateSession();
-      if (result && result.session) {
-        const nameEl = document.getElementById('userName');
-        if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
-      }
+      const nameEl = document.getElementById('userName');
+      if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
     })();
 
     /* ── REVEAL ─────────────────────────────────── */

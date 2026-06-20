@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Mes publications - Mia Darling</title>
   <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="apple-touch-icon" href="assets/logo.png" />
@@ -309,8 +309,8 @@
     /* ── FAB ────────────────────────────────────────── */
     .fab {
       position: fixed;
-      right: 40px;
-      bottom: 40px;
+      right: max(40px, env(safe-area-inset-right));
+      bottom: max(40px, env(safe-area-inset-bottom));
       width: 64px;
       height: 64px;
       border-radius: 50%;
@@ -530,6 +530,13 @@
         padding: 72px 12px 80px;
       }
 
+      .fab {
+        width: 56px;
+        height: 56px;
+        right: max(20px, env(safe-area-inset-right));
+        bottom: max(20px, env(safe-area-inset-bottom));
+      }
+
       .pub-title {
         font-size: 24px;
       }
@@ -685,16 +692,13 @@
   <script>
     /* ── CHECK SESSION ─────────────────────────────────────── */
     (async function checkSession() {
-      const sessionToken = localStorage.getItem('mia_darling_session');
-      if (!sessionToken) {
+      const result = await MiaDarling.SessionManager.getOrCreateSession();
+      if (!result || !result.sessionToken) {
         window.location.href = 'welcome.html';
         return;
       }
-      const result = await MiaDarling.SessionManager.getOrCreateSession();
-      if (result && result.session) {
-        const nameEl = document.getElementById('userName');
-        if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
-      }
+      const nameEl = document.getElementById('userName');
+      if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
     })();
 
     /* ── REVEAL ──────────────────────────── */

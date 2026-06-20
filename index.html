@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Mia Darling — Parlez, sans vous dévoiler.</title>
   <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="apple-touch-icon" href="assets/logo.png" />
@@ -839,7 +839,8 @@
 
     @media (max-width: 960px) {
       nav {
-        padding: 0 32px;
+        padding-left: max(32px, env(safe-area-inset-left));
+        padding-right: max(32px, env(safe-area-inset-right));
         height: 72px;
       }
 
@@ -915,7 +916,8 @@
 
     @media (max-width: 768px) {
       nav {
-        padding: 0 16px;
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
         height: 64px;
       }
 
@@ -991,7 +993,8 @@
 
     @media (max-width: 480px) {
       nav {
-        padding: 0 12px;
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
         height: 56px;
       }
 
@@ -1245,18 +1248,14 @@
     let currentSession = null;
 
     (async function checkSession() {
-      const sessionToken = localStorage.getItem('mia_darling_session');
-      if (!sessionToken) {
+      // Récupère la session liée au compte Google ; sinon → connexion
+      const result = await MiaDarling.SessionManager.getOrCreateSession();
+      if (!result || !result.sessionToken) {
         window.location.href = 'welcome.html';
         return;
       }
-
-      // Initialiser la session et charger les infos
-      const result = await MiaDarling.SessionManager.getOrCreateSession();
-      if (result && result.session) {
-        currentSession = result.session;
-        displayUserInfo(result.session);
-      }
+      currentSession = result.session;
+      displayUserInfo(result.session);
     })();
 
     function displayUserInfo(session) {
@@ -1269,12 +1268,10 @@
       });
     }
 
-    function logout() {
-      if (confirm('Se déconnecter ? Vous pourrez récupérer votre compte avec votre code de récupération.')) {
-        localStorage.removeItem('mia_darling_session');
-        localStorage.removeItem('mia_darling_recovery');
-        window.location.href = 'welcome.html';
-      }
+    async function logout() {
+      if (!confirm('Se déconnecter ?')) return;
+      await MiaDarling.SessionManager.signOut();
+      window.location.href = 'welcome.html';
     }
 
     /* ── TESTIMONIALS FROM SUPABASE ─────────────────────────── */

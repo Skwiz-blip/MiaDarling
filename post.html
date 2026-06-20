@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Mia Darling</title>
   <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="apple-touch-icon" href="assets/logo.png" />
@@ -422,6 +422,7 @@
       left: 0;
       right: 0;
       padding: 16px 72px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
       background: rgba(0, 0, 0, .85);
       backdrop-filter: blur(18px);
       border-top: 1px solid rgba(166, 108, 255, .15);
@@ -515,7 +516,7 @@
 
     @media (max-width: 960px) {
       .post-page {
-        padding: 108px 20px 100px;
+        padding: 108px 20px calc(100px + env(safe-area-inset-bottom));
       }
 
       .post-body {
@@ -524,12 +525,13 @@
 
       .comment-input-bar {
         padding: 12px 16px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
       }
     }
 
     @media (max-width: 768px) {
       .post-page {
-        padding: 88px 16px 90px;
+        padding: 88px 16px calc(90px + env(safe-area-inset-bottom));
       }
 
       .post-card {
@@ -600,7 +602,11 @@
 
     @media (max-width: 480px) {
       .post-page {
-        padding: 72px 12px 80px;
+        padding: 72px 12px calc(80px + env(safe-area-inset-bottom));
+      }
+
+      .comment-input-bar {
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
       }
 
       .post-card {
@@ -785,16 +791,13 @@
   <script>
     /* ── CHECK SESSION ─────────────────────────────────────── */
     (async function checkSession() {
-      const sessionToken = localStorage.getItem('mia_darling_session');
-      if (!sessionToken) {
+      const result = await MiaDarling.SessionManager.getOrCreateSession();
+      if (!result || !result.sessionToken) {
         window.location.href = 'welcome.html';
         return;
       }
-      const result = await MiaDarling.SessionManager.getOrCreateSession();
-      if (result && result.session) {
-        const nameEl = document.getElementById('userName');
-        if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
-      }
+      const nameEl = document.getElementById('userName');
+      if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
     })();
 
     /* ── REVEAL ─────────────────────────────────────── */
