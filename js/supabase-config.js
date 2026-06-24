@@ -6,7 +6,16 @@ let supabaseClient = null;
 
 function initSupabase() {
     if (window.supabase && window.supabase.createClient) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Session Google persistante + rafraîchie automatiquement :
+        // l'utilisateur reste connecté entre les visites et appareils.
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                storageKey: 'mia_darling_auth'
+            }
+        });
         console.log('Supabase client initialisé');
         return true;
     }
@@ -24,7 +33,7 @@ const SessionManager = {
         let sessionToken = localStorage.getItem(this.STORAGE_KEY);
 
         if (sessionToken) {
-            const { data } = await supabaseClient
+            const { data, error } = await supabaseClient
                 .from('anonymous_sessions')
                 .select('*')
                 .eq('session_token', sessionToken)
@@ -38,17 +47,34 @@ const SessionManager = {
 
                 return { sessionToken, session: data };
             }
-            // Token périmé/banni : on repart de la connexion Google
-            localStorage.removeItem(this.STORAGE_KEY);
+            // On ne jette le token QUE s'il est vraiment invalide (introuvable ou
+            // banni), jamais sur une erreur réseau transitoire — pour éviter de
+            // déconnecter l'utilisateur pour rien.
+            if (!error && !data) {
+                localStorage.removeItem(this.STORAGE_KEY);
+                sessionToken = null;
+            }
+            else if (data && data.is_banned) {
+                localStorage.removeItem(this.STORAGE_KEY);
+                return { sessionToken: null, session: data, banned: true };
+            }
         }
 
         // 2) Une session Supabase Auth (Google) est-elle active ?
+        // (Persistée + rafraîchie : retrouve l'identité liée au compte Google,
+        //  même après un vidage du token local ou un changement d'appareil.)
         const { data: { session: authSession } } = await supabaseClient.auth.getSession();
         if (authSession && authSession.user) {
             return await this.bindAuthUser(authSession.user);
         }
 
-        // 3) Pas connecté → pas de session
+        // 3) Token encore en cache mais vérif impossible (réseau) → on le garde
+        //    de façon optimiste plutôt que de déconnecter l'utilisateur.
+        if (sessionToken) {
+            return { sessionToken, session: null };
+        }
+
+        // 4) Vraiment pas connecté → pas de session
         return null;
     },
 
@@ -58,29 +84,53 @@ const SessionManager = {
      * jamais dans anonymous_sessions qui reste public et 100% anonyme.
      */
     async bindAuthUser(authUser) {
-        // Identité déjà liée à ce compte Google ?
+        const meta = authUser.user_metadata || {};
+
+        // Cherche le token déjà lié à ce compte Google, de DEUX façons, pour
+        // garantir la récupération même si une écriture précédente a échoué :
+        //   a) via user_identities (lien principal)
+        //   b) via anonymous_sessions.auth_user_id (filet de secours)
+        let token = null;
+
         const { data: identity } = await supabaseClient
             .from('user_identities')
             .select('session_token')
             .eq('auth_user_id', authUser.id)
             .maybeSingle();
+        if (identity && identity.session_token) token = identity.session_token;
 
-        if (identity && identity.session_token) {
-            localStorage.setItem(this.STORAGE_KEY, identity.session_token);
+        if (!token) {
+            const { data: boundSession } = await supabaseClient
+                .from('anonymous_sessions')
+                .select('session_token')
+                .eq('auth_user_id', authUser.id)
+                .maybeSingle();
+            if (boundSession && boundSession.session_token) {
+                token = boundSession.session_token;
+                // Ré-enregistre le lien privé manquant (backfill)
+                await this.upsertIdentity(authUser, token, meta);
+            }
+        }
+
+        // Identité retrouvée → on réutilise le MÊME token (mêmes données)
+        if (token) {
             const { data: sess } = await supabaseClient
                 .from('anonymous_sessions')
                 .select('*')
-                .eq('session_token', identity.session_token)
+                .eq('session_token', token)
                 .maybeSingle();
 
             if (sess && sess.is_banned) return { sessionToken: null, session: sess, banned: true };
 
+            // Garde l'email/nom à jour côté admin, sans rien changer côté public
+            await this.upsertIdentity(authUser, token, meta);
             await supabaseClient
                 .from('anonymous_sessions')
                 .update({ last_activity_at: new Date().toISOString() })
-                .eq('session_token', identity.session_token);
+                .eq('session_token', token);
 
-            return { sessionToken: identity.session_token, session: sess };
+            localStorage.setItem(this.STORAGE_KEY, token);
+            return { sessionToken: token, session: sess };
         }
 
         // Première connexion : on crée l'identité anonyme + le lien privé
@@ -98,25 +148,45 @@ const SessionManager = {
             .single();
 
         if (sessErr) {
+            // Course possible : une session pour ce compte vient d'être créée
+            // ailleurs. On la récupère plutôt que d'en créer une seconde.
+            const { data: raced } = await supabaseClient
+                .from('anonymous_sessions')
+                .select('*')
+                .eq('auth_user_id', authUser.id)
+                .maybeSingle();
+            if (raced && raced.session_token) {
+                await this.upsertIdentity(authUser, raced.session_token, meta);
+                localStorage.setItem(this.STORAGE_KEY, raced.session_token);
+                return { sessionToken: raced.session_token, session: raced };
+            }
             console.error('Erreur création session:', sessErr);
             return null;
         }
 
-        const meta = authUser.user_metadata || {};
-        const { error: idErr } = await supabaseClient
-            .from('user_identities')
-            .insert({
-                auth_user_id: authUser.id,
-                session_token: newToken,
-                real_email: authUser.email || null,
-                real_name: meta.full_name || meta.name || null,
-                avatar_url: meta.avatar_url || meta.picture || null
-            });
-
-        if (idErr) console.error('Erreur enregistrement identité:', idErr);
+        await this.upsertIdentity(authUser, newToken, meta);
 
         localStorage.setItem(this.STORAGE_KEY, newToken);
         return { sessionToken: newToken, session: sess };
+    },
+
+    /**
+     * Écrit/maj le lien privé (auth_user_id ↔ session_token) + email/nom réels.
+     * Idempotent (upsert) : sûr à appeler à chaque connexion.
+     */
+    async upsertIdentity(authUser, sessionToken, meta) {
+        meta = meta || authUser.user_metadata || {};
+        const { error } = await supabaseClient
+            .from('user_identities')
+            .upsert({
+                auth_user_id: authUser.id,
+                session_token: sessionToken,
+                real_email: authUser.email || null,
+                real_name: meta.full_name || meta.name || null,
+                avatar_url: meta.avatar_url || meta.picture || null,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'auth_user_id' });
+        if (error) console.error('Erreur enregistrement identité:', error);
     },
 
     /**

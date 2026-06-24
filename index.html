@@ -197,15 +197,16 @@
       animation: floatCard 5s ease-in-out infinite;
     }
 
-    .floating-card:nth-child(1) {
-      top: 22%;
-      right: 430px;
+    /* Bulles ancrées au blob (donc visibles avec l'image, y compris mobile) */
+    .floating-card.fc-1 {
+      top: 6%;
+      left: -16%;
       animation-delay: 0s;
     }
 
-    .floating-card:nth-child(2) {
-      bottom: 20%;
-      right: 380px;
+    .floating-card.fc-2 {
+      bottom: 10%;
+      left: 4%;
       animation-delay: 1.8s;
     }
 
@@ -313,7 +314,7 @@
     }
 
     .testimonial-card {
-      width: 420px;
+      width: min(400px, 82vw);
       min-height: 148px;
       background: rgba(255, 255, 255, .06);
       border: 1px solid rgba(255, 255, 255, .1);
@@ -322,7 +323,7 @@
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       transition: background .3s, border-color .3s, transform .3s;
       cursor: pointer;
     }
@@ -338,6 +339,32 @@
       font-weight: 600;
       line-height: 1.6;
       color: rgba(255, 255, 255, .9);
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-quote.expanded {
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+
+    .card-more {
+      align-self: flex-start;
+      background: none;
+      border: none;
+      padding: 0;
+      margin-top: -2px;
+      color: var(--purple-light);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .card-more:hover {
+      text-decoration: underline;
     }
 
     .card-meta {
@@ -866,11 +893,38 @@
       }
 
       .hero {
-        padding: 120px 32px 80px;
+        padding: 110px 32px 70px;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 48px;
       }
 
+      .hero-content {
+        max-width: 100%;
+        order: 1;
+      }
+
+      .hero-subtitle,
+      .hero-tagline {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-buttons {
+        justify-content: center;
+      }
+
+      /* L'illustration (blob + bulles) reste visible sur mobile/Android */
       .hero-image {
-        display: none;
+        display: block;
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        order: 2;
+        width: min(300px, 72vw);
+        margin: 0 auto;
       }
 
       .hero::after {
@@ -878,7 +932,19 @@
       }
 
       .floating-card {
-        display: none;
+        max-width: 56%;
+        padding: 10px 14px;
+        font-size: 12px;
+      }
+
+      .floating-card.fc-1 {
+        top: 0;
+        left: -6%;
+      }
+
+      .floating-card.fc-2 {
+        bottom: 0;
+        left: 4%;
       }
 
       .section-header,
@@ -1024,17 +1090,14 @@
       }
 
       .hero-buttons {
-        flex-direction: column;
-        gap: 12px;
+        gap: 10px;
+        justify-content: center;
       }
 
       .btn-primary,
       .btn-secondary {
-        width: 100%;
-        padding: 7px 14px;
-        font-size: 12px;
-        text-align: center;
-        justify-content: center;
+        padding: 9px 18px;
+        font-size: 12.5px;
       }
 
       .section-title {
@@ -1088,13 +1151,6 @@
   </nav>
 
   <section class="hero">
-    <div class="floating-card" style="top:24%;right:440px;">
-      "Je me sens enfin compris…"
-    </div>
-    <div class="floating-card" style="bottom:22%;right:390px;">
-      "Écrire ça m'a libérée."
-    </div>
-
     <div class="hero-content">
       <h1 class="hero-title reveal">
         <span class="t-white">Mia</span>&thinsp;<span class="t-purple">Darling</span>
@@ -1123,6 +1179,8 @@
           <circle cx="40" cy="28" r="9" fill="rgba(106,63,191,.5)" />
         </svg>
       </div>
+      <div class="floating-card fc-1">"Je me sens enfin compris…"</div>
+      <div class="floating-card fc-2">"Écrire ça m'a libérée."</div>
     </div>
   </section>
 
@@ -1277,6 +1335,8 @@
     /* ── TESTIMONIALS FROM SUPABASE ─────────────────────────── */
     let postsData = [];
 
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
     async function loadPosts() {
       const track = document.getElementById('cardsTrack');
       track.innerHTML = '<div class="loading-placeholder" style="text-align:center;padding:40px;color:rgba(255,255,255,.4);">Chargement...</div>';
@@ -1308,17 +1368,34 @@
           });
 
           const tagsHtml = post.tags.length > 0
-            ? post.tags.map(t => `<span style="margin-left:8px;font-size:11px;color:rgba(166,108,255,.7);">#${t.name}</span>`).join('')
+            ? post.tags.map(t => `<span style="margin-left:8px;font-size:11px;color:rgba(166,108,255,.7);">#${esc(t.name)}</span>`).join('')
             : '';
 
+          const isLong = (post.content || '').length > 180;
+
           card.innerHTML = `
-            <p class="card-quote">"${post.content}"</p>
+            <p class="card-quote">"${esc(post.content)}"</p>
+            ${isLong ? '<button class="card-more" type="button">Voir plus</button>' : ''}
             <div class="card-meta">
               <span class="card-dot"></span>
-              ${post.authorName} · ${post.timeAgo}
+              ${esc(post.authorName)} · ${esc(post.timeAgo)}
               ${tagsHtml}
               <span class="card-heart" data-post-id="${post.id}" data-likes="${post.reactionsCount}">♡ ${post.reactionsCount}</span>
             </div>`;
+
+          // Bouton "Voir plus" : élargit la carte sans naviguer, et met le
+          // défilement automatique en pause pendant la lecture.
+          const moreBtn = card.querySelector('.card-more');
+          if (moreBtn) {
+            moreBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const quote = card.querySelector('.card-quote');
+              const expanded = quote.classList.toggle('expanded');
+              moreBtn.textContent = expanded ? 'Voir moins' : 'Voir plus';
+              track.style.animationPlayState = expanded ? 'paused' : '';
+            });
+          }
+
           track.appendChild(card);
         });
         attachReactionHandlers();
