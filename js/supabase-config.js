@@ -71,7 +71,7 @@ const SessionManager = {
         // 3) Token encore en cache mais vérif impossible (réseau) → on le garde
         //    de façon optimiste plutôt que de déconnecter l'utilisateur.
         if (sessionToken) {
-            return { sessionToken, session: null };
+            return { sessionToken, session: { anonymous_name: 'Anonyme', is_banned: false } };
         }
 
         // 4) Vraiment pas connecté → pas de session
