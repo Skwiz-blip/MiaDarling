@@ -80,7 +80,7 @@
       background: #000;
       border: 1.5px solid var(--glass-border);
       border-radius: 48px;
-      padding: 56px 64px;
+      padding: 56px 64px 120px;
       position: relative;
       overflow: hidden;
       min-height: 500px;
@@ -412,12 +412,14 @@
       align-items: center;
       justify-content: space-between;
       gap: 20px;
+      flex-wrap: wrap;
     }
 
     .bottom-bar-left {
       display: flex;
       align-items: center;
       gap: 16px;
+      flex-wrap: wrap;
     }
 
     .char-bubble {
@@ -439,6 +441,7 @@
       border: 1px solid rgba(255, 255, 255, .12);
       border-radius: 50px;
       padding: 12px 26px;
+      min-height: 46px;
       font-family: var(--font);
       font-size: 15px;
       font-weight: 600;
@@ -458,6 +461,7 @@
       color: var(--purple-dark);
       border: none;
       padding: 14px 44px;
+      min-height: 46px;
       border-radius: 50px;
       font-family: var(--font);
       font-size: 17px;
@@ -465,6 +469,7 @@
       cursor: pointer;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 10px;
       transition: background .2s, transform .15s, box-shadow .2s;
       box-shadow: 0 0 30px rgba(166, 108, 255, .4);
@@ -597,6 +602,10 @@
         padding-bottom: max(14px, env(safe-area-inset-bottom));
       }
 
+      .bottom-bar-inner {
+        gap: 12px;
+      }
+
       .publish-btn {
         padding: 12px 28px;
         font-size: 15px;
@@ -643,8 +652,21 @@
       .bottom-bar {
         padding: 12px 16px;
         padding-bottom: max(12px, env(safe-area-inset-bottom));
-        flex-wrap: wrap;
-        gap: 10px;
+      }
+
+      .bottom-bar-inner {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .bottom-bar-left {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .draft-btn,
+      .publish-btn {
+        width: 100%;
       }
 
       .publish-btn {
@@ -698,9 +720,28 @@
         padding: 6px 12px;
       }
 
+      .bottom-bar {
+        padding: 10px 12px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+      }
+
+      .bottom-bar-left {
+        gap: 8px;
+      }
+
+      .draft-btn {
+        padding: 9px 14px;
+        font-size: 12px;
+      }
+
       .publish-btn {
-        padding: 8px 20px;
+        padding: 10px 16px;
         font-size: 13px;
+        min-height: 42px;
+      }
+
+      .publish-btn .btn-label {
+        display: none;
       }
 
       .success-card {
@@ -857,11 +898,11 @@
         <div class="char-bubble"><span class="count" id="charCount">0</span> / 2000 caractères</div>
         <button class="draft-btn" id="draftBtn">Sauvegarder brouillon</button>
       </div>
-      <button class="publish-btn" id="publishBtn" disabled>
+      <button class="publish-btn" id="publishBtn" disabled aria-label="Publier anonymement">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" />
         </svg>
-        Publier anonymement
+        <span class="btn-label">Publier anonymement</span>
       </button>
     </div>
   </div>
