@@ -1030,6 +1030,19 @@ const GroupsAPI = {
             memberCounts[r.group_id] = (memberCounts[r.group_id] || 0) + 1;
         });
 
+        const { data: messageRows } = await supabaseClient
+            .from('group_messages')
+            .select('group_id, created_at')
+            .eq('status', 'visible')
+            .order('created_at', { ascending: false });
+
+        const latestActivityByGroup = {};
+        (messageRows || []).forEach(message => {
+            if (!latestActivityByGroup[message.group_id]) {
+                latestActivityByGroup[message.group_id] = message.created_at;
+            }
+        });
+
         // Formater les données pour le frontend
         return data.map(g => ({
             id: g.id,
@@ -1038,6 +1051,7 @@ const GroupsAPI = {
             membersCount: memberCounts[g.id] ?? (g.members_count || 0),
             messagesCount: g.messages_count || 0,
             createdAt: g.created_at,
+            lastActivityAt: latestActivityByGroup[g.id] || g.created_at,
             status: g.status
         }));
     },
@@ -1064,6 +1078,15 @@ const GroupsAPI = {
             .eq('group_id', groupId);
 
         // Formater les données pour le frontend
+        const { data: latestMessageRow } = await supabaseClient
+            .from('group_messages')
+            .select('created_at')
+            .eq('group_id', groupId)
+            .eq('status', 'visible')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
         return {
             id: data.id,
             name: data.name,
@@ -1071,6 +1094,7 @@ const GroupsAPI = {
             membersCount: realMembersCount ?? (data.members_count || 0),
             messagesCount: data.messages_count || 0,
             createdAt: data.created_at,
+            lastActivityAt: latestMessageRow?.created_at || data.created_at,
             status: data.status
         };
     },

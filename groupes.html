@@ -1382,7 +1382,7 @@
           <div class="group-preview">
             <div class="group-header">
               <span class="group-name">${escapeHtml(g.name)}</span>
-              <span class="group-time">${formatTime(g.createdAt)}</span>
+              <span class="group-time">${formatTime(g.lastActivityAt || g.createdAt)}</span>
             </div>
             <div class="group-last-msg">${g.membersCount || 0} membres</div>
           </div>
@@ -1614,7 +1614,14 @@
     }
 
     function updateGroupPreview(groupId) {
-      // Refresh group list preview when new message arrives
+      const previewEl = document.querySelector(`.group-item[data-id="${groupId}"] .group-time`);
+      if (!previewEl) return;
+
+      MiaDarling.GroupsAPI.getById(groupId).then(group => {
+        if (group) {
+          previewEl.textContent = formatTime(group.lastActivityAt || group.createdAt);
+        }
+      });
     }
 
     async function logout() {
