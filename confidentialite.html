@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Politique de confidentialité — Mia Darling</title>
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #000000;
+      --purple-dark: #25015B;
+      --purple-mid: #6A3FBF;
+      --purple-light: #A66CFF;
+      --purple-soft: #C29AFF;
+      --white: #FFFFFF;
+      --text-sub: rgba(255, 255, 255, .72);
+      --text-muted: rgba(255, 255, 255, .45);
+      --border: rgba(255, 255, 255, .08);
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      min-height: 100vh;
+      line-height: 1.65;
+      background-image:
+        radial-gradient(ellipse 60% 40% at 10% -5%, rgba(37, 1, 91, .5) 0%, transparent 65%);
+    }
+
+    /* Header */
+    .legal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      height: 68px;
+      padding: 0 max(24px, env(safe-area-inset-left));
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(0, 0, 0, .85);
+      backdrop-filter: blur(20px);
+      z-index: 10;
+    }
+
+    .legal-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .legal-logo img { width: 36px; height: 36px; border-radius: 50%; }
+    .legal-logo .logo-m { font-family: 'Great Vibes', cursive; font-size: 24px; color: #fff; }
+    .legal-logo .logo-d { font-family: 'Great Vibes', cursive; font-size: 24px; color: var(--purple-soft); }
+
+    .legal-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--purple-light);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border: 1px solid rgba(166, 108, 255, .3);
+      border-radius: 50px;
+      transition: background .2s, border-color .2s;
+    }
+
+    .legal-back:hover { background: rgba(166, 108, 255, .1); border-color: var(--purple-light); }
+
+    /* Content */
+    .legal-wrap { max-width: 820px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    .legal-title {
+      font-size: clamp(30px, 5vw, 44px);
+      font-weight: 800;
+      letter-spacing: -.01em;
+      margin-bottom: 10px;
+    }
+
+    .legal-title span { color: var(--purple-soft); }
+
+    .legal-updated {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 36px;
+    }
+
+    .legal-intro {
+      font-size: 17px;
+      color: var(--text-sub);
+      margin-bottom: 36px;
+      padding: 18px 20px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--purple-light);
+      border-radius: 12px;
+    }
+
+    .legal-section { margin-bottom: 30px; }
+
+    .legal-section h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--purple-soft);
+      margin-bottom: 12px;
+    }
+
+    .legal-section p { color: var(--text-sub); margin-bottom: 10px; }
+
+    .legal-section ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+    .legal-section li {
+      color: var(--text-sub);
+      padding-left: 22px;
+      position: relative;
+    }
+
+    .legal-section li::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 11px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--purple-light);
+    }
+
+    /* Footer */
+    .legal-footer {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 28px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .legal-footer a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color .2s; }
+    .legal-footer a:hover { color: var(--purple-light); }
+    .legal-footer .copy { font-size: 13px; color: rgba(255, 255, 255, .28); }
+
+    @media (max-width: 520px) {
+      .legal-logo .logo-d { display: none; }
+      .legal-wrap { padding: 32px 18px 60px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="legal-nav">
+    <a class="legal-logo" href="index.html">
+      <img src="assets/logo.png" alt="Mia Darling" />
+      <span><span class="logo-m">Mia</span> <span class="logo-d">Darling</span></span>
+    </a>
+    <a class="legal-back" href="javascript:history.length>1?history.back():location.href='index.html'">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      Retour
+    </a>
+  </header>
+
+  <main class="legal-wrap">
+    <h1 class="legal-title">Politique de <span>confidentialité</span></h1>
+    <p class="legal-updated">Dernière mise à jour : Juillet 2026</p>
+
+    <p class="legal-intro">Chez Mia Darling, la protection de votre vie privée constitue une priorité.</p>
+
+    <section class="legal-section">
+      <h2>1. Données collectées</h2>
+      <p>Nous collectons uniquement les informations nécessaires au fonctionnement de la plateforme, notamment :</p>
+      <ul>
+        <li>votre adresse e-mail (si requise pour l'inscription) ;</li>
+        <li>votre pseudonyme ;</li>
+        <li>vos préférences de compte ;</li>
+        <li>les contenus que vous publiez ;</li>
+        <li>certaines données techniques (adresse IP, type d'appareil, navigateur, journaux de connexion) afin
+          d'assurer la sécurité et le bon fonctionnement du service.</li>
+      </ul>
+    </section>
+
+    <section class="legal-section">
+      <h2>2. Utilisation des données</h2>
+      <p>Vos données sont utilisées exclusivement pour :</p>
+      <ul>
+        <li>créer et gérer votre compte ;</li>
+        <li>assurer la sécurité de la plateforme ;</li>
+        <li>prévenir les fraudes et les abus ;</li>
+        <li>améliorer les services proposés ;</li>
+        <li>répondre à vos demandes d'assistance.</li>
+      </ul>
+    </section>
+
+    <section class="legal-section">
+      <h2>3. Confidentialité</h2>
+      <p>Vos informations personnelles ne sont ni vendues ni louées à des tiers.</p>
+      <p>Elles ne sont communiquées que lorsque la loi l'exige ou lorsqu'une autorité compétente en fait la demande.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>4. Protection des données</h2>
+      <p>Mia Darling met en œuvre des mesures techniques et organisationnelles destinées à protéger les informations
+        des utilisateurs contre tout accès non autorisé, toute perte ou toute divulgation.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>5. Conservation des données</h2>
+      <p>Les données sont conservées uniquement pendant la durée nécessaire au fonctionnement du service ou
+        conformément aux obligations légales applicables.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>6. Vos droits</h2>
+      <p>Selon la législation applicable, vous pouvez demander :</p>
+      <ul>
+        <li>l'accès à vos données ;</li>
+        <li>leur rectification ;</li>
+        <li>leur suppression ;</li>
+        <li>la limitation de leur traitement.</li>
+      </ul>
+      <p>Toute demande peut être adressée à l'équipe Mia Darling.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>7. Confidentialité des échanges</h2>
+      <p>Bien que Mia Darling protège les données de ses utilisateurs, chaque membre demeure responsable des
+        informations qu'il choisit volontairement de partager.</p>
+      <p>Nous recommandons fortement de ne jamais publier d'informations permettant de vous identifier.</p>
+    </section>
+
+    <section class="legal-section">
+      <h2>8. Modification de la politique</h2>
+      <p>Cette politique peut être modifiée à tout moment. Les utilisateurs seront informés des changements
+        importants.</p>
+    </section>
+  </main>
+
+  <footer class="legal-footer">
+    <div style="display:flex;gap:18px;flex-wrap:wrap;">
+      <a href="clause.html">Clause importante</a>
+      <a href="index.html">Accueil</a>
+    </div>
+    <span class="copy">© 2026 Mia Darling — Toutes identités protégées.</span>
+  </footer>
+</body>
+
+</html>
