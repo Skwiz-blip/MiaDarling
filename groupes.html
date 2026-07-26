@@ -1336,9 +1336,13 @@
           event: 'INSERT',
           schema: 'public',
           table: 'group_messages'
-        }, (payload) => {
+        }, async (payload) => {
           if (currentGroup && payload.new.group_id === currentGroup.id) {
-            appendMessage(payload.new);
+            // payload.new = ligne BRUTE (session_token, created_at…) → on la
+            // normalise et on résout le pseudo avant d'afficher, sinon on aurait
+            // "Anonyme" + "Invalid Date" jusqu'au refresh.
+            const msg = await normalizeRealtimeMessage(payload.new);
+            appendMessage(msg);
           }
           updateGroupPreview(payload.new.group_id);
         })
@@ -1452,6 +1456,36 @@
       });
 
       scrollToBottom();
+    }
+
+    // Convertit une ligne brute de group_messages (temps réel) vers le format
+    // attendu par l'affichage, et récupère le vrai pseudo de l'auteur.
+    async function normalizeRealtimeMessage(row) {
+      let authorName = 'Anonyme';
+      if (row.is_admin_reply) {
+        authorName = 'Admin';
+      } else if (currentSession && row.session_token === currentSession.session_token) {
+        authorName = currentSession.anonymous_name || 'Moi';
+      } else if (row.session_token) {
+        try {
+          const supabase = MiaDarling.getSupabase();
+          const { data } = await supabase
+            .from('anonymous_sessions')
+            .select('anonymous_name')
+            .eq('session_token', row.session_token)
+            .maybeSingle();
+          if (data && data.anonymous_name) authorName = data.anonymous_name;
+        } catch (e) { /* on garde "Anonyme" */ }
+      }
+      return {
+        id: row.id,
+        groupId: row.group_id,
+        content: row.content,
+        sessionToken: row.session_token,
+        authorName,
+        isAdminReply: !!row.is_admin_reply,
+        createdAt: row.created_at
+      };
     }
 
     function appendMessage(msg) {
