@@ -139,6 +139,23 @@ CREATE TRIGGER trg_notify_group_message
     AFTER INSERT ON group_messages
     FOR EACH ROW EXECUTE FUNCTION notify_group_message();
 
+
 -- =====================================================
--- Fin. Les notifications se créent désormais toutes seules.
+-- REALTIME : diffuser les nouvelles notifications en direct
+-- (permet la pastille "non lues" qui se met à jour sans recharger)
+-- =====================================================
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables
+        WHERE pubname = 'supabase_realtime'
+          AND schemaname = 'public'
+          AND tablename = 'notifications'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+    END IF;
+END $$;
+
+-- =====================================================
+-- Fin. Les notifications se créent (et se diffusent) toutes seules.
 -- =====================================================

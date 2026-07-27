@@ -178,7 +178,22 @@
         document.getElementById('userStats').textContent = `${s.postsCount} posts · ${s.reactionsCount} réactions`;
       });
       await loadNotifications();
+      subscribeRealtime(result.sessionToken);
     })();
+
+    // Temps réel : recharge la liste dès qu'une nouvelle notification arrive
+    function subscribeRealtime(token) {
+      const sb = MiaDarling.getSupabase();
+      if (!sb || !token) return;
+      sb.channel('notif-page-' + token)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: 'recipient_token=eq.' + token
+        }, () => { loadNotifications(); })
+        .subscribe();
+    }
 
     function verbe(n) {
       switch (n.type) {
