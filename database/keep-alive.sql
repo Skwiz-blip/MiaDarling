@@ -1,4 +1,10 @@
 -- 1) Activer les extensions nécessaires
+--    ⚠️ RECOMMANDÉ : active plutôt pg_cron et pg_net depuis
+--    Dashboard > Database > Extensions (recherche "pg_cron" puis "pg_net",
+--    bascule chaque interrupteur). Le CREATE EXTENSION ci-dessous peut entrer
+--    en conflit (deadlock) avec les workers de Supabase.
+--    Si tu passes par le Dashboard, saute directement à l'étape 2.
+--    Exécute chaque ligne SÉPARÉMENT (une à la fois) si tu utilises le SQL :
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
@@ -10,15 +16,11 @@ CREATE TABLE IF NOT EXISTS keepalive (
 );
 INSERT INTO keepalive (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
--- 3) (Ré)installer proprement la tâche planifiée
---    On supprime l'ancienne si elle existe déjà pour éviter les doublons.
-DO $$
-BEGIN
-    PERFORM cron.unschedule('mia-keepalive');
-EXCEPTION WHEN OTHERS THEN
-    -- la tâche n'existait pas encore : on ignore
-    NULL;
-END $$;
+-- 3) (Ré)installer proprement la tâche planifiée.
+--    On désinscrit l'ancienne UNIQUEMENT si elle existe (un seul énoncé, sans
+--    bloc PL/pgSQL, pour limiter les verrous sur cron.job → moins de deadlock).
+SELECT cron.unschedule('mia-keepalive')
+WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'mia-keepalive');
 
 -- 4) Planifier : tous les jours à 06:00 UTC
 --    (largement dans la fenêtre des 7 jours, avec de la marge)
