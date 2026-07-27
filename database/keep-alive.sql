@@ -1,19 +1,3 @@
--- =====================================================
--- MIA DARLING — Garder le backend Supabase (gratuit) actif
--- =====================================================
--- Problème : un projet Supabase gratuit est MIS EN PAUSE après 7 jours
---            SANS aucune requête API.
--- Solution : une tâche planifiée (pg_cron) qui envoie chaque jour une vraie
---            requête HTTP à la propre API REST du projet (pg_net) → trafic
---            réel = le projet reste actif.
---
--- ⚠️ Un simple trigger SQL NE SUFFIT PAS (il ne se déclenche que sur un
---    changement de données et ne génère pas de trafic API). Il faut bien une
---    tâche planifiée comme ci-dessous.
---
--- À exécuter UNE FOIS dans Supabase > SQL Editor.
--- =====================================================
-
 -- 1) Activer les extensions nécessaires
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
@@ -56,23 +40,3 @@ SELECT cron.schedule(
     );
     $job$
 );
-
--- =====================================================
--- VÉRIFICATIONS (à lancer quand tu veux)
--- =====================================================
--- Voir la tâche planifiée :
---   SELECT jobid, schedule, jobname, active FROM cron.job;
---
--- Voir les dernières exécutions (succès/échec) :
---   SELECT jobid, status, return_message, start_time
---   FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
---
--- Voir le dernier battement de cœur :
---   SELECT * FROM keepalive;
---
--- Voir les réponses HTTP de pg_net :
---   SELECT id, status_code, created FROM net._http_response ORDER BY created DESC LIMIT 5;
---
--- Pour DÉSACTIVER le keep-alive plus tard :
---   SELECT cron.unschedule('mia-keepalive');
--- =====================================================

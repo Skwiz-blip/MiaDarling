@@ -1,24 +1,3 @@
--- =====================================================
--- MIA DARLING - Migration "Connexion Google"
--- =====================================================
--- Objectif :
---   * Côté utilisateur : l'app reste 100% anonyme (on continue d'utiliser
---     session_token + anonymous_name partout).
---   * On lie chaque session anonyme à un compte Google (auth.users) pour
---     retrouver son identité sur n'importe quel appareil (remplace le code
---     de récupération).
---   * Les VRAIES identités (email + nom Google) sont stockées dans une table
---     SÉPARÉE et PROTÉGÉE (user_identities), lisible UNIQUEMENT par le
---     propriétaire et par les admins. La clé anon publique ne peut PAS la lire.
---
--- ⚠️ NE JAMAIS désactiver le RLS sur user_identities : ce serait exposer
---    publiquement les emails réels et casser l'anonymat de la plateforme.
---
--- À exécuter UNE FOIS dans l'éditeur SQL Supabase.
--- =====================================================
-
-
--- 1) Lier les sessions anonymes à un compte Google ------------------
 ALTER TABLE anonymous_sessions
     ADD COLUMN IF NOT EXISTS auth_user_id UUID;
 
