@@ -1380,6 +1380,92 @@ const GroupsAPI = {
 };
 
 // =====================================================
+// NOTIFICATIONS
+// =====================================================
+
+const NotificationsAPI = {
+    /**
+     * Récupère mes notifications (enrichies avec le pseudo de l'acteur).
+     */
+    async getMine(limit = 50) {
+        const token = SessionManager.getToken();
+        if (!token) return [];
+
+        const { data, error } = await supabaseClient
+            .from('notifications')
+            .select('*')
+            .eq('recipient_token', token)
+            .order('created_at', { ascending: false })
+            .limit(limit);
+
+        if (error || !data) return [];
+
+        // Résoudre les pseudos des acteurs
+        const tokens = [...new Set(data.map(n => n.actor_token).filter(Boolean))];
+        const nameMap = {};
+        if (tokens.length) {
+            const { data: sessions } = await supabaseClient
+                .from('anonymous_sessions')
+                .select('session_token, anonymous_name')
+                .in('session_token', tokens);
+            (sessions || []).forEach(s => { nameMap[s.session_token] = s.anonymous_name; });
+        }
+
+        // Résoudre les noms de groupes
+        const groupIds = [...new Set(data.map(n => n.group_id).filter(Boolean))];
+        const groupMap = {};
+        if (groupIds.length) {
+            const { data: groups } = await supabaseClient
+                .from('groups')
+                .select('id, name')
+                .in('id', groupIds);
+            (groups || []).forEach(g => { groupMap[g.id] = g.name; });
+        }
+
+        return data.map(n => ({
+            id: n.id,
+            type: n.type,
+            actorName: nameMap[n.actor_token] || 'Quelqu\'un',
+            postId: n.post_id,
+            commentId: n.comment_id,
+            groupId: n.group_id,
+            groupName: n.group_id ? (groupMap[n.group_id] || 'un groupe') : null,
+            preview: n.preview || '',
+            isRead: n.is_read,
+            createdAt: n.created_at,
+            timeAgo: PostsAPI.timeAgo(n.created_at)
+        }));
+    },
+
+    /**
+     * Nombre de notifications non lues.
+     */
+    async unreadCount() {
+        const token = SessionManager.getToken();
+        if (!token) return 0;
+        const { count } = await supabaseClient
+            .from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('recipient_token', token)
+            .eq('is_read', false);
+        return count || 0;
+    },
+
+    /**
+     * Marque toutes mes notifications comme lues.
+     */
+    async markAllRead() {
+        const token = SessionManager.getToken();
+        if (!token) return;
+        await supabaseClient
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('recipient_token', token)
+            .eq('is_read', false);
+    }
+};
+
+// =====================================================
 // INITIALISATION
 // =====================================================
 
@@ -1405,6 +1491,7 @@ window.MiaDarling = {
     MoodsAPI,
     TagsAPI,
     GroupsAPI,
+    NotificationsAPI,
     getSupabase: () => supabaseClient
 };
 

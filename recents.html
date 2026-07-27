@@ -150,6 +150,7 @@
       margin-bottom: 16px;
       display: -webkit-box;
       -webkit-line-clamp: 4;
+      line-clamp: 4;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -271,6 +272,7 @@
       <li><a href="groupes.html">Cercles de soutien</a></li>
       <li><a href="recents.html" class="active">Confidences</a></li>
       <li><a href="mes-publications.html">Mes publications</a></li>
+      <li><a href="notifications.html">Notifications</a></li>
     </ul>
     <div class="nav-user">
       <div class="user-info" id="userInfo">
@@ -308,6 +310,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/mobile-nav.js"></script>
+  <script src="js/notif-badge.js"></script>
   <script>
     let currentFilter = 'recents';
     let currentSession = null;
@@ -321,6 +324,10 @@
       }
       currentSession = result.session;
       document.getElementById('userName').textContent = currentSession.anonymous_name || 'Anonyme';
+      MiaDarling.StatsAPI.getMyStats().then(s => {
+        const el = document.getElementById('userStats');
+        if (el) el.textContent = `${s.postsCount} posts · ${s.reactionsCount} réactions`;
+      });
       loadPosts();
     })();
 

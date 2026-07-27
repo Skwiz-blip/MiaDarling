@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Notifications — Mia Darling</title>
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Manrope:wght@400;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .notif-wrap { max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; position: relative; z-index: 1; }
+
+    .notif-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .notif-title { font-size: clamp(26px, 5vw, 36px); font-weight: 800; }
+    .notif-title span { color: var(--purple-soft); }
+
+    .btn-readall {
+      background: rgba(166, 108, 255, .12);
+      border: 1px solid rgba(166, 108, 255, .3);
+      color: var(--purple-light);
+      font-family: 'Manrope', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .btn-readall:hover { background: rgba(166, 108, 255, .2); }
+
+    .notif-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .notif-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 16px 18px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 16px;
+      text-decoration: none;
+      color: inherit;
+      transition: background .2s, border-color .2s, transform .15s;
+    }
+
+    .notif-item:hover { background: rgba(255, 255, 255, .07); border-color: rgba(166, 108, 255, .3); transform: translateY(-1px); }
+
+    .notif-item.unread { border-color: rgba(166, 108, 255, .35); background: rgba(166, 108, 255, .07); }
+
+    .notif-icon {
+      flex-shrink: 0;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      background: rgba(166, 108, 255, .14);
+    }
+
+    .notif-icon.react { background: rgba(255, 107, 157, .14); }
+    .notif-icon.group { background: rgba(107, 181, 255, .14); }
+    .notif-icon.like { background: rgba(255, 107, 107, .14); }
+
+    .notif-body { flex: 1; min-width: 0; }
+
+    .notif-text { font-size: 15px; line-height: 1.4; }
+    .notif-text b { color: var(--purple-soft); font-weight: 700; }
+
+    .notif-preview {
+      font-size: 13px;
+      color: rgba(255, 255, 255, .5);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .notif-time { font-size: 12px; color: rgba(255, 255, 255, .4); margin-top: 6px; }
+
+    .notif-dot {
+      flex-shrink: 0;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--purple-light);
+      margin-top: 6px;
+    }
+
+    .notif-empty {
+      text-align: center;
+      padding: 70px 20px;
+      color: rgba(255, 255, 255, .45);
+    }
+
+    .notif-empty svg { width: 48px; height: 48px; opacity: .3; margin-bottom: 16px; }
+    .notif-empty p { font-size: 15px; }
+
+    @media (max-width: 500px) {
+      .notif-item { padding: 13px 14px; gap: 11px; }
+      .notif-icon { width: 38px; height: 38px; font-size: 18px; }
+      .notif-text { font-size: 14px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img src="assets/logo.png" alt="Mia Darling">
+      <span class="nav-logo-text">
+        <span class="logo-m">Mia</span>
+        <span class="logo-d">Darling</span>
+      </span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Accueil</a></li>
+      <li><a href="groupes.html">Cercles de soutien</a></li>
+      <li><a href="recents.html">Confidences</a></li>
+      <li><a href="mes-publications.html">Mes publications</a></li>
+      <li><a href="notifications.html" class="active">Notifications</a></li>
+    </ul>
+    <div class="nav-user">
+      <div class="user-info" id="userInfo">
+        <span class="user-name" id="userName">Chargement...</span>
+        <span class="user-stats" id="userStats"></span>
+      </div>
+      <button class="btn-logout" onclick="logout()" title="Se déconnecter">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="notif-wrap">
+      <div class="notif-head">
+        <h1 class="notif-title">Notif<span>ications</span></h1>
+        <button class="btn-readall" id="readAllBtn" onclick="markAll()" style="display:none">Tout marquer comme lu</button>
+      </div>
+
+      <div class="notif-list" id="notifList">
+        <div class="notif-empty"><p>Chargement…</p></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script>
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    (async function init() {
+      const result = await MiaDarling.SessionManager.getOrCreateSession();
+      if (!result || !result.sessionToken) { window.location.href = 'welcome.html'; return; }
+      const nameEl = document.getElementById('userName');
+      if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
+      MiaDarling.StatsAPI.getMyStats().then(s => {
+        document.getElementById('userStats').textContent = `${s.postsCount} posts · ${s.reactionsCount} réactions`;
+      });
+      await loadNotifications();
+    })();
+
+    function verbe(n) {
+      switch (n.type) {
+        case 'reaction': return { icon: '💜', cls: 'react', text: `<b>${esc(n.actorName)}</b> a réagi à votre témoignage` };
+        case 'comment': return { icon: '💬', cls: '', text: `<b>${esc(n.actorName)}</b> a commenté votre témoignage` };
+        case 'reply': return { icon: '↩️', cls: '', text: `<b>${esc(n.actorName)}</b> a répondu à votre commentaire` };
+        case 'comment_like': return { icon: '❤️', cls: 'like', text: `<b>${esc(n.actorName)}</b> a aimé votre commentaire` };
+        case 'group_message': return { icon: '👥', cls: 'group', text: `<b>${esc(n.actorName)}</b> a écrit dans <b>${esc(n.groupName)}</b>` };
+        default: return { icon: '🔔', cls: '', text: 'Nouvelle activité' };
+      }
+    }
+
+    function linkFor(n) {
+      if (n.type === 'group_message' && n.groupId) return `groupes.html`;
+      if (n.postId) return `post.html?id=${n.postId}`;
+      if (n.type === 'comment_like') return `mes-publications.html`;
+      return null;
+    }
+
+    async function loadNotifications() {
+      const list = document.getElementById('notifList');
+      const notifs = await MiaDarling.NotificationsAPI.getMine(60);
+
+      if (!notifs.length) {
+        list.innerHTML = `<div class="notif-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <p>Aucune notification pour le moment.</p>
+        </div>`;
+        return;
+      }
+
+      const hasUnread = notifs.some(n => !n.isRead);
+      document.getElementById('readAllBtn').style.display = hasUnread ? 'inline-block' : 'none';
+
+      list.innerHTML = notifs.map(n => {
+        const v = verbe(n);
+        const href = linkFor(n);
+        const tag = href ? 'a' : 'div';
+        const hrefAttr = href ? ` href="${href}"` : '';
+        return `<${tag} class="notif-item ${n.isRead ? '' : 'unread'}"${hrefAttr}>
+          <div class="notif-icon ${v.cls}">${v.icon}</div>
+          <div class="notif-body">
+            <div class="notif-text">${v.text}</div>
+            ${n.preview ? `<div class="notif-preview">« ${esc(n.preview)} »</div>` : ''}
+            <div class="notif-time">${esc(n.timeAgo)}</div>
+          </div>
+          ${n.isRead ? '' : '<span class="notif-dot"></span>'}
+        </${tag}>`;
+      }).join('');
+
+      // Marque comme lues (pour la prochaine visite / le badge)
+      MiaDarling.NotificationsAPI.markAllRead();
+    }
+
+    async function markAll() {
+      await MiaDarling.NotificationsAPI.markAllRead();
+      document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+      document.querySelectorAll('.notif-dot').forEach(el => el.remove());
+      document.getElementById('readAllBtn').style.display = 'none';
+    }
+
+    async function logout() {
+      if (!confirm('Se déconnecter ?')) return;
+      await MiaDarling.SessionManager.signOut();
+      window.location.href = 'welcome.html';
+    }
+  </script>
+  <script src="js/mobile-nav.js"></script>
+</body>
+
+</html>
