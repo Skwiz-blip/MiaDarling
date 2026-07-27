@@ -400,9 +400,16 @@
       loadPosts();
     }
 
-    // Toggle reaction
+    // Toggle reaction (heart = type 3, un entier — surtout PAS le nom "heart")
+    let reactionBusy = false;
     async function toggleReaction(postId) {
-      await MiaDarling.ReactionsAPI.toggle(postId, 'heart');
+      if (reactionBusy) return;
+      reactionBusy = true;
+      try {
+        await MiaDarling.ReactionsAPI.toggle(postId, 3);
+      } finally {
+        reactionBusy = false;
+      }
       loadPosts();
     }
 
