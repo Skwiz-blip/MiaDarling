@@ -312,6 +312,25 @@ const PostsAPI = {
         return posts[0];
     },
 
+    /**
+     * Récupère un post par son identifiant public opaque (URL post.html?p=...).
+     */
+    async getByPublicId(publicId) {
+        const { data, error } = await supabaseClient
+            .from('posts')
+            .select('*')
+            .eq('public_id', publicId)
+            .single();
+
+        if (error) {
+            console.error('Erreur récupération post:', error);
+            return null;
+        }
+
+        const posts = await this.enrichWithAnonymousNames([data]);
+        return posts[0];
+    },
+
     async enrichWithAnonymousNames(posts) {
         if (!posts || posts.length === 0) return [];
 
@@ -507,6 +526,7 @@ const PostsAPI = {
     formatPost(post, anonymousName = 'Anonyme') {
         return {
             id: post.id,
+            publicId: post.public_id,
             content: post.content,
             authorName: anonymousName,
             createdAt: post.created_at,
@@ -728,19 +748,22 @@ const CommentsAPI = {
             await SessionManager.getOrCreateSession();
         }
 
-        // Vérifier si déjà liké
-        const { data: existing, error: checkError } = await supabaseClient
+        // La table comment_likes n'a PAS de colonne "id" : sa clé primaire est
+        // (comment_id, session_token). On sélectionne/supprime donc via ce couple.
+        const token = SessionManager.getToken();
+        const { data: existing } = await supabaseClient
             .from('comment_likes')
-            .select('id')
+            .select('comment_id')
             .eq('comment_id', commentId)
-            .eq('session_token', SessionManager.getToken())
+            .eq('session_token', token)
             .maybeSingle();
 
         if (existing) {
             const { error } = await supabaseClient
                 .from('comment_likes')
                 .delete()
-                .eq('id', existing.id);
+                .eq('comment_id', commentId)
+                .eq('session_token', token);
 
             return { action: 'unliked', success: !error };
         } else {
@@ -1422,11 +1445,23 @@ const NotificationsAPI = {
             (groups || []).forEach(g => { groupMap[g.id] = g.name; });
         }
 
+        // Résoudre l'identifiant public opaque des posts liés (pour l'URL)
+        const postIds = [...new Set(data.map(n => n.post_id).filter(Boolean))];
+        const publicMap = {};
+        if (postIds.length) {
+            const { data: posts } = await supabaseClient
+                .from('posts')
+                .select('id, public_id')
+                .in('id', postIds);
+            (posts || []).forEach(p => { publicMap[p.id] = p.public_id; });
+        }
+
         return data.map(n => ({
             id: n.id,
             type: n.type,
             actorName: nameMap[n.actor_token] || 'Quelqu\'un',
             postId: n.post_id,
+            postPublicId: n.post_id ? (publicMap[n.post_id] || null) : null,
             commentId: n.comment_id,
             groupId: n.group_id,
             groupName: n.group_id ? (groupMap[n.group_id] || 'un groupe') : null,

@@ -364,7 +364,7 @@
       }
 
       container.innerHTML = posts.map(post => `
-        <div class="post-card" onclick="window.location.href='post.html?id=${post.id}'">
+        <div class="post-card" onclick="window.location.href='post.html?p=${post.publicId}'">
           <div class="post-header">
             <div class="post-avatar">${post.authorName?.charAt(0) || '?'}</div>
             <div class="post-author-info">

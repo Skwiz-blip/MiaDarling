@@ -812,30 +812,35 @@
     let userReactions = [];
 
     async function loadPost() {
-      // Récupérer l'ID du post depuis l'URL
+      // L'URL utilise l'identifiant public opaque (?p=...) ; on garde ?id=
+      // (numérique) en repli pour les anciens liens / l'admin.
       const urlParams = new URLSearchParams(window.location.search);
-      currentPostId = urlParams.get('id');
+      const publicId = urlParams.get('p');
+      const numericId = urlParams.get('id');
 
-      if (!currentPostId) {
-        // Afficher un message d'erreur au lieu de rediriger
+      if (!publicId && !numericId) {
         document.querySelector('.post-body').textContent = 'Aucun témoignage spécifié. Retournez à l\'accueil pour explorer.';
         document.querySelector('.post-tags').innerHTML = '';
-        console.warn('Pas d\'ID dans l\'URL');
+        console.warn('Pas d\'identifiant dans l\'URL');
         return;
       }
 
       try {
-        // Charger le post
-        currentPost = await MiaDarling.PostsAPI.getById(currentPostId);
+        // Charger le post (par identifiant public en priorité)
+        currentPost = publicId
+          ? await MiaDarling.PostsAPI.getByPublicId(publicId)
+          : await MiaDarling.PostsAPI.getById(numericId);
 
         if (!currentPost) {
-          // Afficher un message au lieu de rediriger
           document.querySelector('.post-body').textContent = 'Ce témoignage n\'existe pas ou a été supprimé.';
           document.querySelector('.post-author').textContent = 'Inconnu';
           document.querySelector('.post-tags').innerHTML = '';
-          console.warn('Post non trouvé:', currentPostId);
+          console.warn('Post non trouvé:', publicId || numericId);
           return;
         }
+
+        // ID numérique interne (réactions, commentaires, vues)
+        currentPostId = currentPost.id;
 
         // Enregistrer la vue
         await MiaDarling.PostsAPI.recordView(currentPostId);

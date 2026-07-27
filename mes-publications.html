@@ -784,7 +784,7 @@
               <span class="pub-card-reaction">🤍 ${pub.viewsCount || 0}</span>
             </div>
             <div class="pub-card-actions">
-              <button class="card-action-btn" onclick="viewPost(${pub.id})">
+              <button class="card-action-btn" onclick="viewPost('${pub.publicId}')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 Voir
               </button>
@@ -806,8 +806,8 @@
       applyFilterAndRender();
     }
 
-    function viewPost(id) {
-      window.location.href = `post.html?id=${id}`;
+    function viewPost(publicId) {
+      window.location.href = `post.html?p=${publicId}`;
     }
 
     function askDelete(id) {

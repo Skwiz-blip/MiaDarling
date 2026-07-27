@@ -208,7 +208,7 @@
 
     function linkFor(n) {
       if (n.type === 'group_message' && n.groupId) return `groupes.html`;
-      if (n.postId) return `post.html?id=${n.postId}`;
+      if (n.postPublicId) return `post.html?p=${n.postPublicId}`;
       if (n.type === 'comment_like') return `mes-publications.html`;
       return null;
     }

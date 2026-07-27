@@ -1,16 +1,3 @@
--- =====================================================
--- MIA DARLING — Notifications
--- =====================================================
--- Crée une table de notifications alimentée AUTOMATIQUEMENT par des triggers :
---   * réaction à ton témoignage
---   * commentaire sur ton témoignage
---   * réponse à ton commentaire
---   * like sur ton commentaire
---   * nouveau message dans un groupe dont tu es membre
---
--- À exécuter UNE FOIS dans Supabase > SQL Editor.
--- =====================================================
-
 CREATE TABLE IF NOT EXISTS notifications (
     id              BIGSERIAL PRIMARY KEY,
     recipient_token VARCHAR(64) NOT NULL,           -- qui reçoit
