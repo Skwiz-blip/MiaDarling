@@ -173,7 +173,7 @@
       const result = await MiaDarling.SessionManager.getOrCreateSession();
       if (!result || !result.sessionToken) { window.location.href = 'welcome.html'; return; }
       const nameEl = document.getElementById('userName');
-      if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
+      if (nameEl) nameEl.textContent = (result.session && result.session.anonymous_name) || 'Anonyme';
       MiaDarling.StatsAPI.getMyStats().then(s => {
         document.getElementById('userStats').textContent = `${s.postsCount} posts · ${s.reactionsCount} réactions`;
       });

@@ -1319,7 +1319,7 @@
       }
       currentSession = result.session;
       const nameEl = document.getElementById('userName');
-      if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
+      if (nameEl) nameEl.textContent = (result.session && result.session.anonymous_name) || 'Anonyme';
       initEmojiPicker();
       await loadGroups();
       setupRealtime();
@@ -1471,11 +1471,8 @@
         try {
           const supabase = MiaDarling.getSupabase();
           const { data } = await supabase
-            .from('anonymous_sessions')
-            .select('anonymous_name')
-            .eq('session_token', row.session_token)
-            .maybeSingle();
-          if (data && data.anonymous_name) authorName = data.anonymous_name;
+            .rpc('resolve_names', { tokens: [row.session_token] });
+          if (data && data[0] && data[0].anonymous_name) authorName = data[0].anonymous_name;
         } catch (e) { /* on garde "Anonyme" */ }
       }
       return {

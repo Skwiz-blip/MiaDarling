@@ -322,7 +322,7 @@
         window.location.href = 'welcome.html';
         return;
       }
-      currentSession = result.session;
+      currentSession = result.session || {};
       document.getElementById('userName').textContent = currentSession.anonymous_name || 'Anonyme';
       MiaDarling.StatsAPI.getMyStats().then(s => {
         const el = document.getElementById('userStats');

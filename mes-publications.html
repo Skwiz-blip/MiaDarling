@@ -696,7 +696,7 @@
         return;
       }
       const nameEl = document.getElementById('userName');
-      if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
+      if (nameEl) nameEl.textContent = (result.session && result.session.anonymous_name) || 'Anonyme';
     })();
 
     /* ── REVEAL ──────────────────────────── */

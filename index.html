@@ -13,7 +13,6 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="shared.css" />
   <style>
-    /* Les styles de base et navbar sont dans shared.css */
 
     .hero {
       position: relative;
@@ -1313,8 +1312,8 @@
         window.location.href = 'welcome.html';
         return;
       }
-      currentSession = result.session;
-      displayUserInfo(result.session);
+      currentSession = result.session || {};
+      displayUserInfo(currentSession);
     })();
 
     function displayUserInfo(session) {

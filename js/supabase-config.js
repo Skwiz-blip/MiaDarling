@@ -29,7 +29,26 @@ if (!initSupabase()) {
 
 const SessionManager = {
     STORAGE_KEY: 'mia_darling_session',
-    async getOrCreateSession() { 
+    /**
+     * Renvoie toujours { sessionToken, session } avec un session NON NULL
+     * dès qu'un token existe. Sans ce garde-fou, une lecture bloquée par le
+     * RLS (0 ligne, aucune erreur) renvoyait session:null et toutes les pages
+     * plantaient sur result.session.anonymous_name.
+     */
+    async getOrCreateSession() {
+        const result = await this.resolveSession();
+        if (result && result.sessionToken && !result.session) {
+            console.warn('Session illisible (RLS ?) — repli sur un profil minimal');
+            result.session = {
+                session_token: result.sessionToken,
+                anonymous_name: 'Anonyme',
+                is_banned: false
+            };
+        }
+        return result;
+    },
+
+    async resolveSession() {
         let sessionToken = localStorage.getItem(this.STORAGE_KEY);
 
         if (sessionToken) {
@@ -249,7 +268,7 @@ const SessionManager = {
             .from('anonymous_sessions')
             .select('*')
             .eq('session_token', token)
-            .single();
+            .maybeSingle();
 
         return error ? null : data;
     },
@@ -343,9 +362,7 @@ const PostsAPI = {
 
         // Récupérer les sessions correspondantes
         const { data: sessions } = await supabaseClient
-            .from('anonymous_sessions')
-            .select('session_token, anonymous_name')
-            .in('session_token', tokens);
+            .rpc('resolve_names', { tokens: tokens });
 
         // Créer un map token -> name
         const nameMap = {};
@@ -473,7 +490,7 @@ const PostsAPI = {
             .select('id')
             .eq('post_id', postId)
             .eq('session_token', SessionManager.getToken())
-            .single();
+            .maybeSingle();
 
         if (!existing) {
             // Enregistrer la vue
@@ -679,9 +696,7 @@ const CommentsAPI = {
 
         // Récupérer les sessions correspondantes
         const { data: sessions } = await supabaseClient
-            .from('anonymous_sessions')
-            .select('session_token, anonymous_name')
-            .in('session_token', tokens);
+            .rpc('resolve_names', { tokens: tokens });
 
         // Créer un map token -> name
         const nameMap = {};
@@ -929,24 +944,18 @@ const StatsAPI = {
      * Récupère les statistiques globales
      */
     async getGlobal() {
-        // Compter les posts
-        const { count: postsCount } = await supabaseClient
-            .from('posts')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'published');
-
-        // Compter les sessions actives ce mois
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        const { count: activeSessions } = await supabaseClient
-            .from('anonymous_sessions')
-            .select('*', { count: 'exact', head: true })
-            .gte('last_activity_at', thirtyDaysAgo.toISOString());
-
+        // Un COUNT direct sur anonymous_sessions ne verrait qu'une ligne
+        // (la sienne) une fois le RLS actif : on passe par une fonction
+        // SECURITY DEFINER qui ne renvoie que des nombres.
+        const { data, error } = await supabaseClient.rpc('get_global_stats');
+        if (error) {
+            console.error('Erreur stats globales:', error);
+            return { postsCount: 0, activeSessions: 0, anonymousPercent: 100 };
+        }
+        const row = Array.isArray(data) ? data[0] : data;
         return {
-            postsCount: postsCount || 0,
-            activeSessions: activeSessions || 0,
+            postsCount: (row && row.posts_count) || 0,
+            activeSessions: (row && row.active_sessions) || 0,
             anonymousPercent: 100
         };
     },
@@ -1127,8 +1136,8 @@ const GroupsAPI = {
      */
     async create(name, description = '') {
         // Vérifier que l'utilisateur est admin
-        const isAdmin = await this.isAdmin();
-        if (!isAdmin) {
+        const admin = await this.getAdmin();
+        if (!admin) {
             console.error('Seul un admin back-office peut créer des groupes');
             return null;
         }
@@ -1136,12 +1145,15 @@ const GroupsAPI = {
         const sessionToken = SessionManager.getToken();
         if (!sessionToken) return null;
 
+        // La table réelle a created_by_admin (uuid -> admin_users.id) et
+        // status, PAS created_by / is_active comme dans les vieux .sql.
         const { data, error } = await supabaseClient
             .from('groups')
             .insert({
                 name: name,
                 description: description,
-                created_by: sessionToken
+                status: 'active',
+                created_by_admin: admin.id
             })
             .select()
             .single();
@@ -1279,9 +1291,7 @@ const GroupsAPI = {
         // Récupérer les noms anonymes
         const tokens = members.map(m => m.session_token);
         const { data: sessions } = await supabaseClient
-            .from('anonymous_sessions')
-            .select('session_token, anonymous_name')
-            .in('session_token', tokens);
+            .rpc('resolve_names', { tokens: tokens });
 
         const nameMap = {};
         (sessions || []).forEach(s => {
@@ -1323,9 +1333,7 @@ const GroupsAPI = {
         }
 
         const { data: sessions } = await supabaseClient
-            .from('anonymous_sessions')
-            .select('session_token, anonymous_name')
-            .in('session_token', tokens);
+            .rpc('resolve_names', { tokens: tokens });
 
         const nameMap = {};
         (sessions || []).forEach(s => {
@@ -1341,9 +1349,9 @@ const GroupsAPI = {
     /**
      * Vérifie si l'utilisateur est admin back-office
      */
-    async isAdmin() {
+    async getAdmin() {
         const sessionToken = SessionManager.getToken();
-        if (!sessionToken) return false;
+        if (!sessionToken) return null;
 
         const { data } = await supabaseClient
             .from('admin_users')
@@ -1352,7 +1360,11 @@ const GroupsAPI = {
             .eq('is_active', true)
             .maybeSingle();
 
-        return !!data;
+        return data || null;
+    },
+
+    async isAdmin() {
+        return !!(await this.getAdmin());
     },
 
     /**
@@ -1362,9 +1374,11 @@ const GroupsAPI = {
         const isAdmin = await this.isAdmin();
         if (!isAdmin) return false;
 
+        // groups n'a pas de colonne is_active : la desactivation passe par
+        // status (meme convention que adminDeleteMessage sur group_messages).
         const { error } = await supabaseClient
             .from('groups')
-            .update({ is_active: false })
+            .update({ status: 'deleted' })
             .eq('id', groupId);
 
         return !error;
@@ -1428,9 +1442,7 @@ const NotificationsAPI = {
         const nameMap = {};
         if (tokens.length) {
             const { data: sessions } = await supabaseClient
-                .from('anonymous_sessions')
-                .select('session_token, anonymous_name')
-                .in('session_token', tokens);
+                .rpc('resolve_names', { tokens: tokens });
             (sessions || []).forEach(s => { nameMap[s.session_token] = s.anonymous_name; });
         }
 

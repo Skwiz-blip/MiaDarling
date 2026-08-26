@@ -795,7 +795,7 @@
         return;
       }
       const nameEl = document.getElementById('userName');
-      if (nameEl) nameEl.textContent = result.session.anonymous_name || 'Anonyme';
+      if (nameEl) nameEl.textContent = (result.session && result.session.anonymous_name) || 'Anonyme';
       MiaDarling.StatsAPI.getMyStats().then(s => {
         const el = document.getElementById('userStats');
         if (el) el.textContent = `${s.postsCount} posts · ${s.reactionsCount} réactions`;
