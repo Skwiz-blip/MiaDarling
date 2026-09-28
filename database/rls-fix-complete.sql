@@ -51,17 +51,6 @@ $$;
 GRANT EXECUTE ON FUNCTION public.my_token() TO anon, authenticated;
 
 
--- =====================================================
--- 2. RÉSOLUTION DES PSEUDOS DES AUTRES MEMBRES
--- =====================================================
--- L'app doit afficher le pseudo des AUTRES (auteurs de témoignages, de
--- commentaires, de messages de groupe), alors qu'anonymous_sessions n'est
--- plus lisible que pour sa propre ligne.
---
--- Volontairement une FONCTION et pas une vue : une vue publique sur
--- (session_token, anonymous_name) serait ÉNUMÉRABLE — n'importe qui
--- pourrait aspirer tous les tokens, donc usurper tous les comptes.
--- Ici il faut déjà connaître les tokens qu'on demande.
 DROP VIEW IF EXISTS public.public_profiles;
 
 CREATE OR REPLACE FUNCTION public.resolve_names(tokens TEXT[])

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /database/
+Disallow: /*.md$
+Disallow: /*.jsx$
+
+Sitemap: https://miadarlingsp.com/sitemap.xml
